@@ -84,13 +84,13 @@ int main() {
     // std::cout << "repr: " << boolean.compute_repr() << std::endl;
     // std::cout << "value: " << boolean.evaluate(state) << std::endl;
 
-      Boolean feature1 = f.parse_boolean("b_empty(c_and(c_primitive(in,0),c_primitive(is_box,0)))");
+    Boolean feature1 = f.parse_boolean("b_empty(c_primitive(in,0))");
 
     Numerical feature2 = f.parse_numerical("n_count(c_not(c_and(r_primitive(at_g,0,1),r_primitive(at,0,1))))");
 
     Numerical feature3 = f.parse_numerical("n_concept_distance(c_some(r_inverse(at),is_truck(0)),r_primitive(road,0,1),c_and(c_all(r_inverse(at_g),c_bot),c_some(r_inverse(at),is_box(0))))");
 
-    Numerical feature4 = f.parse_numerical("n_concept_distance(c_primitive(in,1),r_primitive(road,0,1),c_primitive())");
+    Numerical feature4 = f.parse_numerical("n_concept_distance(c_primitive(in,1),r_primitive(road,0,1),c_some(r_primitive(at_g,0,1),c_primitive(in,0)))");
 
     return 0;
 }
