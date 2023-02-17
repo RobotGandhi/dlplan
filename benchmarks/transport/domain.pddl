@@ -2,8 +2,8 @@
 (:requirements :typing)
 (:types	place - object
 		movable - object
-		box - object
-		truck - object
+		box - movable
+		truck - movable
 )
 
 (:predicates	(at ?x1 - movable ?x2 - place)
@@ -13,7 +13,7 @@
 )
 
 (:action pick-up-box
-:parameters (?t - truck ?b - box ?x - cell)
+:parameters (?t - truck ?b - box ?x - place)
 :precondition (and (at ?b ?x) (at ?t ?x) (empty ?t))
 :effect (and
 (not (at ?b ?x))
@@ -22,8 +22,8 @@
 )
 
 
-(:action drop-package
-:parameters (?t - truck ?b - box ?x - cell)
+(:action drop-box
+:parameters (?t - truck ?b - box ?x - place)
 :precondition (and (at ?t ?x) (in ?b ?t))
 :effect (and
 (empty ?t)
