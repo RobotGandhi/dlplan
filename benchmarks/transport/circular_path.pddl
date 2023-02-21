@@ -16,12 +16,12 @@
 	(connected p_1_1 p_0_1)
 	(connected p_1_0 p_1_1)
 	(connected p_1_1 p_1_0)
-	(at t1 p1)
-	(at b1 p1)
+	(at t1 p_0_0)
+	(at b1 p_0_0)
 	(empty t1)
 )
 
 (:goal
-	(at b1 p4)
+	(at b1 p_1_1)
 )
 )
