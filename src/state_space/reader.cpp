@@ -11,7 +11,7 @@
 using namespace dlplan::core;
 using namespace std::string_literals;
 
-namespace dlplan::state_space {
+namespace dlplan::state_space::reader {
 
 static void parse_predicates_file(const std::string& filename, VocabularyInfo& vocabulary_info, bool is_static) {
     std::ifstream infile(filename);
@@ -116,8 +116,8 @@ static void parse_goal_atoms_file(const std::string& filename, InstanceInfo& ins
 }
 
 
-static std::pair<core::StatesSet, StateIndicesSet> parse_states_file(const std::string& filename, std::shared_ptr<InstanceInfo> instance_info, const std::vector<int>& new_atom_indices) {
-    core::StatesSet states;
+static std::pair<StateMapping, StateIndicesSet> parse_states_file(const std::string& filename, std::shared_ptr<InstanceInfo> instance_info, const std::vector<int>& new_atom_indices) {
+    StateMapping states;
     StateIndicesSet goal_state_indices;
     std::ifstream infile(filename);
     std::string line;
@@ -141,7 +141,7 @@ static std::pair<core::StatesSet, StateIndicesSet> parse_states_file(const std::
                 atom_indices.push_back(new_atom_index);
             }
         }
-        auto result = states.emplace(core::State(instance_info, atom_indices, state_index));
+        auto result = states.emplace(state_index, core::State(instance_info, atom_indices, state_index));
         if (!result.second) {
             throw std::runtime_error("StateSpaceGenerator::parse_states_file - tried parsing duplicate states.");
         }
@@ -161,14 +161,43 @@ static AdjacencyList parse_transitions_file(const std::string& filename) {
     return adjacency_list;
 }
 
+static GeneratorExitCode parse_run_file(const std::string& filename) {
+    std::ifstream infile(filename);
+    std::string line;
+    while (std::getline(infile, line)) {
+        // [t=0.00182678s, 11492 KB] Time limit reached. Abort search.
+        if (std::regex_search(line, std::regex("Time limit reached\\. Abort search\\.", std::regex_constants::ECMAScript))) {
+            return GeneratorExitCode::INCOMPLETE;
+        }
+        // [t=0.00408488s, 11316 KB] Num states limit reached. Abort search.
+        else if (std::regex_search(line, std::regex("Num states limit reached\\. Abort search\\.", std::regex_constants::ECMAScript))) {
+            return GeneratorExitCode::INCOMPLETE;
+        }
+        // [t=0.000984712s, 11492 KB] Finished dumping the reachable state space.
+        else if (std::regex_search(line, std::regex("Finished dumping the reachable state space\\.", std::regex_constants::ECMAScript))) {
+            return GeneratorExitCode::COMPLETE;
+        }
+    }
+    return GeneratorExitCode::FAIL;
+}
 
-StateSpace StateSpaceReader::read(
-    std::shared_ptr<const VocabularyInfo> vocabulary_info,
-    int index) const {
+GeneratorResult read(std::shared_ptr<const VocabularyInfo> vocabulary_info, int index) {
+    auto exit_code = parse_run_file("run.log");
+    if (exit_code == GeneratorExitCode::FAIL) {
+        return GeneratorResult{
+            exit_code,
+            std::move(StateSpace(nullptr, {}, 0, {}, {}))
+        };
+    }
     if (!vocabulary_info) {
         std::shared_ptr<VocabularyInfo> new_vocabulary_info = std::make_shared<core::VocabularyInfo>();
         parse_predicates_file("predicates.txt", *new_vocabulary_info, false);
-        parse_predicates_file("static-predicates.txt", *new_vocabulary_info, true);
+        /*
+         we parse static predicates as non static ones because
+         we want to ensure we cannot deduce this information from
+         a spefic instance of the domain
+        */
+        parse_predicates_file("static-predicates.txt", *new_vocabulary_info, false);
         parse_constants_file("constants.txt", *new_vocabulary_info);
         vocabulary_info = new_vocabulary_info;
     }
@@ -180,8 +209,11 @@ StateSpace StateSpaceReader::read(
     auto states = std::move(parse_states_result.first);
     auto goal_state_indices = std::move(parse_states_result.second);
     auto adjacency_list = parse_transitions_file("transitions.txt");
-    // initial state has id 0 in scorpion
-    return StateSpace(std::move(instance_info), std::move(states), 0, std::move(adjacency_list), std::move(goal_state_indices));
+    int initial_state_index = 0;
+    return GeneratorResult{
+        exit_code,
+        std::move(StateSpace(std::move(instance_info), std::move(states), initial_state_index, std::move(adjacency_list), std::move(goal_state_indices)))
+    };
 }
 
 }

@@ -10,9 +10,9 @@ void InverseRole::generate_impl(const core::States& states, int target_complexit
     core::SyntacticElementFactory& factory = data.m_factory;
     for (const auto& r : data.m_roles_by_iteration[target_complexity-1]) {
         auto element = factory.make_inverse_role(r);
-        auto denotations = element.get_element_ref().evaluate(states, caches);
+        auto denotations = element->evaluate(states, caches);
         if (data.m_role_hash_table.insert(denotations).second) {
-            data.m_reprs.push_back(element.compute_repr());
+            data.m_reprs.push_back(element->compute_repr());
             data.m_roles_by_iteration[target_complexity].push_back(std::move(element));
             increment_generated();
         }
@@ -20,6 +20,6 @@ void InverseRole::generate_impl(const core::States& states, int target_complexit
 }
 
 std::string InverseRole::get_name() const {
-    return core::element::InverseRole::get_name();
+    return core::InverseRole::get_name();
 }
 }

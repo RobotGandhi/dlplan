@@ -2,6 +2,9 @@
 
 Welcome to the DLPlan-library.
 
+![](images/thumbnail.png)
+*Figure 1: illustration of the core functionality of DLPlan - evaluating a domain-general state feature based on description logics with planning extensions on a given first-order planning state.*
+
 ## 1. Background
 
 ### 1.1. State Language
@@ -18,70 +21,64 @@ There are two types of objects in description logics: concepts and roles. A Conc
 
 ## 2. Features of the DLPlan-library
 
-The library consists of four components. Each having its own public header file, examples, tests, and python bindings.
+The library consists of five components. Each component has its own public header file, examples, tests, and python bindings.
 
 ### 2.1. Core
 
-The core component provides functionality for constructing and evaluating features for the class of problems Q. We included `guide.pdf` in the `docs` folder with further information regarding the available elements with a description of their syntax and semantics.
+The core component provides functionality for the construction an evaluation of domain-general state features based on description logics.
 
 ### 2.2. Generator
 
-The generator component provides functionality for automatically generating a set of features F with complexity at most k such that for each f,f' in F there exists a state s in Si such that f yields a different valuation on s than f'.
+The generator component provides functionality for automatically generating a set of domain-general state features that are distinguishable on a given finite set of states.
 
 ### 2.3. Policy
 
-The policy component allows to construct a policy and evaluate state pairs (s, s') on it.
+The policy component implements the general policy language.
 
 ### 2.4. State Space
 
-The state space component allows to generate state spaces from PDDL input files.
+The state space provides functionality for generating state spaces from PDDL.
 
-### 2.5 Weisfeiler-Lehman (in progress)
+### 2.5. Novelty
 
-The weisfeiler-lehman component allows to identify subgraphs that are indistinguishable
-by two-variable first order logic and hence, are also indistinguishable by less expressive description logics.
-
+The novelty component provides functionality for width-based planning and learning.
 
 ### 3.1. Building the C++ Interface
+
+Install requirements
+```console
+pip install pybind11 pybind11-global state_space_generator
+```
 
 Run the following from the project root to build the library.
 By default, the library compiles in `Debug` mode.
 
 ```console
-
-cmake -DCMAKE_INSTALL_PREFIX=/usr/local -S . -B build
-
+cmake -S . -B build
 cmake --build build -j4
-
 ```
 To build the library in `Release` mode, run
 ```console
-
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local/ -S . -B build
+cmake -DCMAKE_BUILD_TYPE=Release -S . -B build
 cmake --build build -j4
 ```
 To install the library, run
 ```console
 cmake --install build
 ```
-Don't forget to update environment variable `CPLUS_INCLUDE_PATH` and `LD_LIBRARY_PATH` if necessary.
 
 ### 3.2. Additional Compile Flags
 
 - DENABLE_TESTING:BOOL=TRUE enables compilation of tests
-- DBUILD_SSE:BOOL=TRUE enables compilation of planner for state space exploration required in the state space component.
-- DPYTHON_EXECUTABLE:FILEPATH=/path/to/python to manually set path to python interpreter to install scorpion. The path can be obtained with
-```console
-where python
-```
 
 ### 3.3. Building the Python Interface
 
-At the moment we recommend building and installing the Python bindings directly into a virtual environment.
-
-You can do that by issuing `pip install .` from the project root, or `pip install -e .`
-
-if you prefer an _editable_ install because you're working on the library code.
+```console
+python3 -m venv --prompt dlplan .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+pip install dlplan
+```
 
 ## 4. Running the Examples
 
@@ -112,11 +109,11 @@ python3 -m pytest api/python/
 
 ## 6. Profiling
 
-In the `experiments/` directory, we provide code to profile parts of the library. To run the experimental code, it is necessary to install the modified version of `tarski` that we provide in the respective submodule in the `submodules/tarski` directory.
+In the `experiments/` directory, we provide code to profile parts of the library.
 
 ## 7. Citing DLPlan
 
-We created a DOI on zenodo under this [link](https://zenodo.org/record/5826140#.YfK9E_so85k). A bibtex entry can look like this:
+We created a DOI on Zenodo under this [link](https://zenodo.org/record/5826140#.YfK9E_so85k). A BibTeX entry can look like this:
 
 ```
 @software{drexler-et-al-dlplan2022,

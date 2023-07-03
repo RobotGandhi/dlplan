@@ -5,7 +5,7 @@
 
 #include <memory>
 #include <vector>
-
+#include <set>
 
 namespace dlplan {
 namespace core {
@@ -24,33 +24,28 @@ class PolicyBuilderImpl {
 private:
     Caches m_caches;
 
-    core::Booleans m_boolean_features;
-    core::Numericals m_numerical_features;
+    Conditions m_conditions;
+    Effects m_effects;
 
     Rules m_rules;
 
-    friend class PolicyMinimizer;
+    Policies m_policies;
 
 public:
-    std::shared_ptr<const core::Boolean> add_boolean_feature(core::Boolean boolean);
-    std::shared_ptr<const core::Numerical> add_numerical_feature(core::Numerical numerical);
+    std::shared_ptr<const BaseCondition> add_pos_condition(const std::shared_ptr<const core::Boolean>& boolean);
+    std::shared_ptr<const BaseCondition> add_neg_condition(const std::shared_ptr<const core::Boolean>& boolean);
+    std::shared_ptr<const BaseCondition> add_gt_condition(const std::shared_ptr<const core::Numerical>& numerical);
+    std::shared_ptr<const BaseCondition> add_eq_condition(const std::shared_ptr<const core::Numerical>& numerical);
+    std::shared_ptr<const BaseEffect> add_pos_effect(const std::shared_ptr<const core::Boolean>& boolean);
+    std::shared_ptr<const BaseEffect> add_neg_effect(const std::shared_ptr<const core::Boolean>& boolean);
+    std::shared_ptr<const BaseEffect> add_bot_effect(const std::shared_ptr<const core::Boolean>& boolean);
+    std::shared_ptr<const BaseEffect> add_inc_effect(const std::shared_ptr<const core::Numerical>& numerical);
+    std::shared_ptr<const BaseEffect> add_dec_effect(const std::shared_ptr<const core::Numerical>& numerical);
+    std::shared_ptr<const BaseEffect> add_bot_effect(const std::shared_ptr<const core::Numerical>& numerical);
 
-    std::shared_ptr<const BaseCondition> add_pos_condition(std::shared_ptr<const core::Boolean> b);
-    std::shared_ptr<const BaseCondition> add_neg_condition(std::shared_ptr<const core::Boolean> b);
-    std::shared_ptr<const BaseCondition> add_gt_condition(std::shared_ptr<const core::Numerical> n);
-    std::shared_ptr<const BaseCondition> add_eq_condition(std::shared_ptr<const core::Numerical> n);
-    std::shared_ptr<const BaseEffect> add_pos_effect(std::shared_ptr<const core::Boolean> b);
-    std::shared_ptr<const BaseEffect> add_neg_effect(std::shared_ptr<const core::Boolean> b);
-    std::shared_ptr<const BaseEffect> add_bot_effect(std::shared_ptr<const core::Boolean> b);
-    std::shared_ptr<const BaseEffect> add_inc_effect(std::shared_ptr<const core::Numerical> n);
-    std::shared_ptr<const BaseEffect> add_dec_effect(std::shared_ptr<const core::Numerical> n);
-    std::shared_ptr<const BaseEffect> add_bot_effect(std::shared_ptr<const core::Numerical> n);
+    std::shared_ptr<const Rule> add_rule(Conditions&& conditions, Effects&& effects);
 
-    std::shared_ptr<const Rule> add_rule(
-        Conditions&& conditions,
-        Effects&& effects);
-
-    Policy get_result();
+    std::shared_ptr<const Policy> add_policy(Rules&& rules);
 };
 
 }

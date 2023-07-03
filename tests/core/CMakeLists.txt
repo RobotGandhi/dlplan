@@ -4,6 +4,9 @@ add_executable(
 target_sources(
     core_tests
     PRIVATE
+        caching.cpp
+        concept_denotation.cpp
+        role_denotation.cpp
         core.cpp
         b_empty.cpp
         b_inclusion.cpp
@@ -39,6 +42,11 @@ target_sources(
         n_role_distance.cpp
         n_sum_role_distance.cpp
         n_count.cpp
+        ../utils/denotation.cpp
 )
-target_link_libraries(core_tests dlplancore gtest_main)
-gtest_discover_tests(core_tests)
+target_link_libraries(core_tests
+    PRIVATE
+        dlplancore
+        GTest::GTest)
+
+add_test(core_gtests core_tests)

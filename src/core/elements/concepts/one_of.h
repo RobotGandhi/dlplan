@@ -1,36 +1,50 @@
 #ifndef DLPLAN_SRC_CORE_ELEMENTS_CONCEPTS_ONE_OF_H_
 #define DLPLAN_SRC_CORE_ELEMENTS_CONCEPTS_ONE_OF_H_
 
-#include "../concept.h"
+#include "../utils.h"
+
+#include "../../../../include/dlplan/core.h"
+
+#include <sstream>
+
+using namespace std::string_literals;
 
 
-namespace dlplan::core::element {
+namespace dlplan::core {
 
 class OneOfConcept : public Concept {
 private:
     void compute_result(const State& state, ConceptDenotation& result) const {
-        result.insert(state.get_instance_info_ref().get_object_idx(m_constant.get_name_ref()));
+        bool found = false;
+        for (const auto& object : state.get_instance_info()->get_objects()) {
+            if (object.get_name() == m_constant.get_name()) {
+                result.insert(object.get_index());
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            throw std::runtime_error("OneOfConcept::evaluate - no object with name of constant exists in instance: (" + m_constant.get_name() + ")");
+        }
     }
 
-    std::unique_ptr<ConceptDenotation> evaluate_impl(const State& state, DenotationsCaches&) const override {
-        auto denotation = std::make_unique<ConceptDenotation>(
-            ConceptDenotation(state.get_instance_info_ref().get_num_objects()));
+    ConceptDenotation evaluate_impl(const State& state, DenotationsCaches&) const override {
+        ConceptDenotation denotation(state.get_instance_info()->get_objects().size());
         compute_result(
             state,
-            *denotation);
+            denotation);
         return denotation;
     }
 
-    std::unique_ptr<ConceptDenotations> evaluate_impl(const States& states, DenotationsCaches& caches) const override {
-        auto denotations = std::make_unique<ConceptDenotations>();
-        denotations->reserve(states.size());
+    ConceptDenotations evaluate_impl(const States& states, DenotationsCaches& caches) const override {
+        ConceptDenotations denotations;
+        denotations.reserve(states.size());
         for (size_t i = 0; i < states.size(); ++i) {
-            auto denotation = std::make_unique<ConceptDenotation>(
-                ConceptDenotation(states[i].get_instance_info_ref().get_num_objects()));
+            ConceptDenotation denotation(states[i].get_instance_info()->get_objects().size());
             compute_result(
                 states[i],
-                *denotation);
-            denotations->push_back(caches.m_c_denot_cache.insert(std::move(denotation)).first->get());
+                denotation);
+            denotations.push_back(caches.get_concept_denotation_cache().insert_denotation(std::move(denotation)));
         }
         return denotations;
     }
@@ -39,15 +53,12 @@ protected:
     const Constant m_constant;
 
 public:
-    OneOfConcept(const VocabularyInfo& vocabulary, const Constant& constant)
-    : Concept(vocabulary, true), m_constant(constant) {
+    OneOfConcept(std::shared_ptr<const VocabularyInfo> vocabulary_info, const Constant& constant)
+    : Concept(vocabulary_info, true), m_constant(constant) {
     }
 
     ConceptDenotation evaluate(const State& state) const override {
-        if (!state.get_instance_info_ref().exists_object(m_constant.get_name_ref())) {
-            throw std::runtime_error("OneOfConcept::evaluate - no object with name of constant exists in instance: (" + m_constant.get_name_ref() + ")");
-        }
-        ConceptDenotation result(state.get_instance_info_ref().get_num_objects());
+        ConceptDenotation result(state.get_instance_info()->get_objects().size());
         compute_result(state, result);
         return result;
     }
@@ -57,7 +68,11 @@ public:
     }
 
     void compute_repr(std::stringstream& out) const override {
-        out << get_name() << "(" << m_constant.get_name_ref() << ")";
+        out << get_name() << "(" << m_constant.get_name() << ")";
+    }
+
+    int compute_evaluate_time_score() const override {
+        return SCORE_LINEAR;
     }
 
     static std::string get_name() {

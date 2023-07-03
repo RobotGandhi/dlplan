@@ -2,15 +2,24 @@ add_library(dlplanstatespace SHARED)
 target_sources(dlplanstatespace
     PRIVATE
         generator.cpp
-        goal_distance_information.cpp
         reader.cpp
-        state_information.cpp
         state_space.cpp)
+
 target_link_libraries(dlplanstatespace dlplancore)
 target_include_directories(dlplanstatespace
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include
 )
+
+if (APPLE)
+    set_target_properties(dlplanstatespace PROPERTIES
+        INSTALL_NAME_DIR "@loader_path"
+    )
+elseif (UNIX)
+    set_target_properties(dlplanstatespace PROPERTIES
+        INSTALL_RPATH "$ORIGIN"
+    )
+endif()
 
 install(
     TARGETS

@@ -1,39 +1,24 @@
-#include "../../include/dlplan/state_space.h"
+#include "generator.h"
 
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <iostream>
 
 #include "../utils/command.h"
-
 
 using namespace dlplan::core;
 using namespace std::string_literals;
 
-namespace dlplan::state_space {
+namespace dlplan::state_space::generator {
 
-ExitCode StateSpaceGenerator::generate_state_space(
+void generate_state_space_files(
     const std::string& domain_file,
-    const std::string& instance_file) const {
-    std::stringstream command;
-    command << "./fast-downward.py"
-            << " " << domain_file
-            << " " << instance_file
-            << " --translate-options"
-            << " --dump-static-predicates"
-            << " --dump-predicates"
-            << " --dump-constants"
-            << " --dump-static-atoms"
-            << " --dump-goal-atoms"
-            << " --search-options"
-            << " --search"
-            << " \"dump_reachable_search_space()\"";
-    auto command_result = utils::Command::exec(command.str());
-    std::ofstream state_space_file;
-    state_space_file.open("planner.log");
-    state_space_file << command_result.output;
-    state_space_file.close();
-    return ExitCode(command_result.exitstatus);
+    const std::string& instance_file,
+    int max_time,
+    int max_num_states) {
+    utils::Command::exec(
+        "python3 -c \"import state_space_generator.state_space_generator; state_space_generator.state_space_generator.generate_state_space(\\\"" + domain_file + "\\\", \\\"" + instance_file + "\\\", " + std::to_string(max_time) + "," + std::to_string(max_num_states) + ")\"");
 }
 
 }

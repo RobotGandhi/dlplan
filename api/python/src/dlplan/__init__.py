@@ -1,13 +1,4 @@
+# For backward compatibility
+# from _dlplan import *
 
-from _dlplan import *
-
-# This helps IDEs figure out what the module synbols are
-__all__ = [
-    'InstanceInfo',
-    'Numerical',
-    'Predicate',
-    'SyntacticElementFactory',
-    'VocabularyInfo',
-]
-
-
+from . import core, generator

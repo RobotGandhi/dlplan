@@ -4,10 +4,10 @@ import sys
 import subprocess
 from pathlib import Path
 
-from setuptools import setup, Extension, find_packages
+from setuptools import setup, find_packages, Extension
 from setuptools.command.build_ext import build_ext
 
-__version__ = "0.0.1"
+__version__ = "0.2.19"
 HERE = Path(__file__).resolve().parent
 
 
@@ -30,27 +30,16 @@ class CMakeBuild(build_ext):
 
         cfg = "Debug" if self.debug else "Release"
 
-        # Set Python_EXECUTABLE instead if you use PYBIND11_FINDPYTHON
         cmake_args = [
             "-DDLPLAN_PYTHON=On",
             f"-DDLPLAN_VERSION_INFO={__version__}",
             f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}",
+            "-DENABLE_TESTING:bool=false",
             f"-DPYTHON_EXECUTABLE={sys.executable}",
-            f"-DBUILD_SCORPION:bool=false",
-            f"-DENABLE_TESTING:bool=false",
             f"-DCMAKE_BUILD_TYPE={cfg}",  # not used on MSVC, but no harm
         ]
         build_args = []
         build_args += ["--target", ext.name]
-
-        # Set CMAKE_BUILD_PARALLEL_LEVEL to control the parallel build level
-        # across all generators.
-        if "CMAKE_BUILD_PARALLEL_LEVEL" not in os.environ:
-            # self.parallel is a Python 3 only way to set parallel jobs by hand
-            # using -j in the build_ext call, not supported by pip or PyPA-build.
-            if hasattr(self, "parallel") and self.parallel:
-                # CMake 3.12+ only.
-                build_args += ["-j{}".format(self.parallel)]
 
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
@@ -73,8 +62,12 @@ setup(
     url="https://github.com/rleap-project/dlplan",
     description="A library for using description logics features in planning",
     long_description="",
-    packages=['dlplan'],
+    install_requires=["pybind11==2.10.4", "pybind11-global==2.10.4", "state_space_generator==0.1.8", "cmake>=3.16.3"],
+    packages=find_packages(where="api/python/src"),
     package_dir={"": "api/python/src"},
+    package_data={
+        "": ["*.pyi"],
+    },
     ext_modules=[CMakeExtension("_dlplan")],
     cmdclass={"build_ext": CMakeBuild},
     zip_safe=False,

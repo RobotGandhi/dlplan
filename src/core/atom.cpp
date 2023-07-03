@@ -1,6 +1,7 @@
 #include "../../include/dlplan/core.h"
 
 #include "../utils/collections.h"
+#include "../utils/logging.h"
 
 #include <sstream>
 #include <cassert>
@@ -12,12 +13,12 @@ namespace dlplan::core {
 
 Atom::Atom(
     const std::string& name,
-    int index,
-    const Predicate& predicate,
-    const std::vector<Object> &objects,
+    AtomIndex index,
+    PredicateIndex predicate_idx,
+    const ObjectIndices &object_idxs,
     bool is_static)
     : m_name(name), m_index(index),
-      m_predicate(predicate), m_objects(objects), m_is_static(is_static) {
+      m_predicate_index(predicate_idx), m_object_indices(object_idxs), m_is_static(is_static) {
 }
 
 Atom::Atom(const Atom& other) = default;
@@ -31,39 +32,52 @@ Atom& Atom::operator=(Atom&& other) = default;
 Atom::~Atom() = default;
 
 bool Atom::operator==(const Atom& other) const {
-    // our construction ensures that there are not two atoms with same index and same root.
-    return get_index() == other.get_index();
+    return (get_name() == other.get_name()) && (get_index() == other.get_index()) && (is_static() == other.is_static());
 }
 
 bool Atom::operator!=(const Atom& other) const {
     return !(*this == other);
 }
 
-const std::string& Atom::get_name_ref() const {
+std::string Atom::compute_repr() const {
+    std::stringstream ss;
+    ss << "Atom("
+       << "index=" << m_index << ", "
+       << "name=" << m_name << ", "
+       << "predicate_index=" << m_predicate_index << ", "
+       << "object_indices=" << m_object_indices << ", "
+       << "is_static=" << m_is_static
+       << ")";
+    return ss.str();
+}
+
+std::ostream& operator<<(std::ostream& os, const Atom& atom) {
+    os << atom.compute_repr();
+    return os;
+}
+
+std::string Atom::str() const {
+    return compute_repr();
+}
+
+const std::string& Atom::get_name() const {
     return m_name;
 }
 
-int Atom::get_index() const {
+AtomIndex Atom::get_index() const {
     return m_index;
 }
 
-const Predicate& Atom::get_predicate_ref() const {
-    return m_predicate;
+PredicateIndex Atom::get_predicate_index() const {
+    return m_predicate_index;
 }
 
-const std::vector<Object>& Atom::get_objects_ref() const {
-    return m_objects;
+const ObjectIndices& Atom::get_object_indices() const {
+    return m_object_indices;
 }
 
-const Object& Atom::get_object_ref(int pos) const {
-    assert(utils::in_bounds(pos, m_objects));
-    if (!utils::in_bounds(pos, m_objects)) {
-        throw std::runtime_error("Out of bounds (" + get_name_ref() + ")");
-    }
-    return m_objects[pos];
-}
 
-bool Atom::get_is_static() const {
+bool Atom::is_static() const {
     return m_is_static;
 }
 

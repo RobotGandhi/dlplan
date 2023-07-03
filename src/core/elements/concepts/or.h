@@ -1,10 +1,16 @@
 #ifndef DLPLAN_SRC_CORE_ELEMENTS_CONCEPTS_OR_H_
 #define DLPLAN_SRC_CORE_ELEMENTS_CONCEPTS_OR_H_
 
-#include "../concept.h"
+#include "../utils.h"
+
+#include "../../../../include/dlplan/core.h"
+
+#include <sstream>
+
+using namespace std::string_literals;
 
 
-namespace dlplan::core::element {
+namespace dlplan::core {
 
 class OrConcept : public Concept {
 private:
@@ -13,42 +19,39 @@ private:
         result |= right_denot;
     }
 
-    std::unique_ptr<ConceptDenotation> evaluate_impl(const State& state, DenotationsCaches& caches) const override {
-        auto denotation = std::make_unique<ConceptDenotation>(
-            ConceptDenotation(state.get_instance_info_ref().get_num_objects()));
-        denotation->set();
+    ConceptDenotation evaluate_impl(const State& state, DenotationsCaches& caches) const override {
+        ConceptDenotation denotation(state.get_instance_info()->get_objects().size());
+        denotation.set();
         compute_result(
             *m_concept_left->evaluate(state, caches),
             *m_concept_right->evaluate(state, caches),
-            *denotation);
+            denotation);
         return denotation;
     }
 
-    std::unique_ptr<ConceptDenotations> evaluate_impl(const States& states, DenotationsCaches& caches) const override {
-        auto denotations = std::make_unique<ConceptDenotations>();
-        denotations->reserve(states.size());
+    ConceptDenotations evaluate_impl(const States& states, DenotationsCaches& caches) const override {
+        ConceptDenotations denotations;
+        denotations.reserve(states.size());
         auto concept_left_denotations = m_concept_left->evaluate(states, caches);
         auto concept_right_denotations = m_concept_right->evaluate(states, caches);
         for (size_t i = 0; i < states.size(); ++i) {
-            const auto& state = states[i];
-            int num_objects = state.get_instance_info_ref().get_num_objects();
-            auto denotation = std::make_unique<ConceptDenotation>(ConceptDenotation(num_objects));
+            ConceptDenotation denotation(states[i].get_instance_info()->get_objects().size());
             compute_result(
                 *(*concept_left_denotations)[i],
                 *(*concept_right_denotations)[i],
-                *denotation);
-            denotations->push_back(caches.m_c_denot_cache.insert(std::move(denotation)).first->get());
+                denotation);
+            denotations.push_back(caches.get_concept_denotation_cache().insert_denotation(std::move(denotation)));
         }
         return denotations;
     }
 
 protected:
-    Concept_Ptr m_concept_left;
-    Concept_Ptr m_concept_right;
+    std::shared_ptr<const Concept> m_concept_left;
+    std::shared_ptr<const Concept> m_concept_right;
 
 public:
-    OrConcept(const VocabularyInfo& vocabulary, Concept_Ptr concept_1, Concept_Ptr concept_2)
-    : Concept(vocabulary, concept_1->get_is_static() && concept_2->get_is_static()),
+    OrConcept(std::shared_ptr<const VocabularyInfo> vocabulary_info, std::shared_ptr<const Concept> concept_1, std::shared_ptr<const Concept> concept_2)
+    : Concept(vocabulary_info, concept_1->is_static() && concept_2->is_static()),
       m_concept_left(concept_1),
       m_concept_right(concept_2) {
         if (!(concept_1 && concept_2)) {
@@ -62,7 +65,7 @@ public:
     }
 
     ConceptDenotation evaluate(const State& state) const override {
-        ConceptDenotation result(state.get_instance_info_ref().get_num_objects());
+        ConceptDenotation result(state.get_instance_info()->get_objects().size());
         compute_result(
             m_concept_left->evaluate(state),
             m_concept_right->evaluate(state),
@@ -80,6 +83,10 @@ public:
         out << ",";
         m_concept_right->compute_repr(out);
         out << ")";
+    }
+
+    int compute_evaluate_time_score() const override {
+        return m_concept_left->compute_evaluate_time_score() + m_concept_right->compute_evaluate_time_score() + SCORE_LINEAR;
     }
 
     static std::string get_name() {

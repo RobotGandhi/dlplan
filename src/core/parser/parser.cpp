@@ -20,7 +20,7 @@ static TokenRegexes element_token_regexes = {
  * Parses the canonical AST from the given tokens.
  * Tokens in children are sorted lexicographically.
  */
-Expression_Ptr Parser::parse_expressions_tree(const VocabularyInfo& vocabulary_info, Tokens &tokens) const {
+std::unique_ptr<Expression> Parser::parse_expressions_tree(Tokens &tokens) const {
     if (tokens.empty()) {
         throw std::runtime_error("Parser::parse_expressions_tree - Unexpected EOF\n");
     }
@@ -30,32 +30,31 @@ Expression_Ptr Parser::parse_expressions_tree(const VocabularyInfo& vocabulary_i
     if (!tokens.empty() && tokens.front().first == TokenType::OPENING_PARENTHESIS) {
         // Consume "(".
         tokens.pop_front();
-        std::vector<Expression_Ptr> children;
+        std::vector<std::unique_ptr<Expression>> children;
         while (!tokens.empty() && tokens.front().first != TokenType::CLOSING_PARENTHESIS) {
             if (tokens.front().first == TokenType::COMMA) {
                 tokens.pop_front();
             }
-            children.push_back(parse_expressions_tree(vocabulary_info, tokens));
+            children.push_back(parse_expressions_tree(tokens));
         }
         // Consume ")".
         if (tokens.empty()) throw std::runtime_error("Parser::parse_expressions_tree - Expected ')' is missing.");
         tokens.pop_front();
         // Construct an expression that can be parsed into an element if the description is correct.
-        return ExpressionFactory().make_expression(vocabulary_info, token.second, std::move(children));
+        return ExpressionFactory().make_expression(token.second, std::move(children));
     } else if (token.first == TokenType::CLOSING_PARENTHESIS) {
         throw std::runtime_error("Parser::parse_expressions_tree - Unexpected ')'");
     } else {
-        return ExpressionFactory().make_expression(vocabulary_info, token.second, {});
+        return ExpressionFactory().make_expression(token.second, {});
     }
 }
 
 Parser::Parser() = default;
 
-Expression_Ptr Parser::parse(
-    const VocabularyInfo& vocabulary_info,
+std::unique_ptr<Expression> Parser::parse(
     const std::string &description) const {
     Tokens tokens = Tokenizer().tokenize(description, element_token_regexes);
-    return parse_expressions_tree(vocabulary_info, tokens);
+    return parse_expressions_tree(tokens);
 }
 
 }

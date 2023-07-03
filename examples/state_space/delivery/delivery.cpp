@@ -1,57 +1,44 @@
-#include <cassert>
-#include <iostream>
-#include <vector>
+/// Example illustrating the state_space component.
 
 #include "../../../include/dlplan/core.h"
 #include "../../../include/dlplan/state_space.h"
 
-using namespace dlplan::core;
+#include <cassert>
+#include <iostream>
+#include <vector>
+
 using namespace dlplan::state_space;
 
 
+/// @brief Generate state spaces over the same vocabulary and compute distances.
 int main() {
-    /* Note: workspace must the be directory containing the binary in the build directory
-       because StateSpaceGenerator executes ./fast-downward.py
-       from current workspace and outputs state space data files into current workspace.
-       The motivation for this is that when we run experiments on a grid
-       we need to use separate output directories to not overwrite
-       state space data files of experiments running in other threads.
-       Hence, it is less error prone to create a symbolic link to the planner
-       and setting the workspace accordingly instead of passing an absolute path to the planner.
-    */
     // Generate and read state space files.
-    StateSpaceGenerator().generate_state_space("domain.pddl", "instance_2_1_0.pddl");
-    auto state_space_2_1_0 = StateSpaceReader().read(nullptr, 0);
-    auto vocabulary_info = state_space_2_1_0.get_instance_info_ref().get_vocabulary_info();
+    auto result = generate_state_space("domain.pddl", "instance_2_1_0.pddl", nullptr, 0);
+    auto state_space_2_1_0 = result.state_space;
+    auto vocabulary_info = state_space_2_1_0.get_instance_info()->get_vocabulary_info();
     std::cout << "State space of instance_2_1_0:" << std::endl;
-    state_space_2_1_0.print();
+    std::cout << state_space_2_1_0.str() << std::endl;
+
     // Generate and read state space files over same VocabularyInfo.
-    StateSpaceGenerator().generate_state_space("domain.pddl", "instance_2_1_0.pddl");
-    auto state_space_2_2_0 = StateSpaceReader().read(vocabulary_info, 1);
+    auto result2 = generate_state_space("domain.pddl", "instance_2_1_0.pddl", vocabulary_info, 1);
+    auto state_space_2_2_0 = result2.state_space;
     std::cout << "State space of instance_2_2_0:" << std::endl;
-    state_space_2_2_0.print();
+    std::cout << state_space_2_2_0.str() << std::endl;
     std::cout << std::endl;
 
-    // Compute goal distances
-    GoalDistanceInformation goal_distance_info = state_space_2_1_0.compute_goal_distance_information();
-    std::cout << "Goal distance information of instance_2_1_0:" << std::endl;
+    // Compute goal distances and deadends
+    Distances goal_distance_info = state_space_2_1_0.compute_goal_distances();
     std::cout << "Goal distances:" << std::endl;
-    for (const auto& pair : goal_distance_info.get_goal_distances_ref()) {
+    for (const auto& pair : goal_distance_info) {
         std::cout << "state_index=" << pair.first << " distance=" << pair.second << std::endl;
     }
     std::cout << "Deadends:" << std::endl;
-    for (const int deadend : goal_distance_info.get_deadend_state_indices_ref()) {
-        std::cout << deadend << " ";
+    for (const auto& pair : state_space_2_1_0.get_states()) {
+        if (!goal_distance_info.count(pair.first)) {
+            std::cout << pair.first << " ";
+        }
     }
     std::cout << std::endl << std::endl;
-
-    // State information to obtain states by index
-    StateInformation state_information = state_space_2_1_0.compute_state_information();
-    std::cout << "State information of instance_2_1_0:" << std::endl;
-    for (auto state_index : state_space_2_1_0.get_state_indices_ref()) {
-        const auto& state = state_information.get_state_ref(state_index);
-        std::cout << "state_index=" << state.get_index() << " atoms=" << state.str() << std::endl;
-    }
 
     // Compute forward distances from states with options forward=true, stop_if_goal=false
     Distances forward_distances = state_space_2_1_0.compute_distances({state_space_2_1_0.get_initial_state_index()}, true, false);

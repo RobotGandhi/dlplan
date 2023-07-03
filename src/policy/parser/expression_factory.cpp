@@ -11,9 +11,9 @@ namespace dlplan::policy::parser {
 
 std::unordered_map<std::string, EXPRESSION_TYPE> ExpressionFactory::m_element_name_to_expression_type = {
     {":policy", POLICY },
+    {":booleans", BOOLEANS},
+    {":numericals", NUMERICALS},
     {":rule", RULE},
-    {":boolean_features", BOOLEAN_FEATURES},
-    {":numerical_features", NUMERICAL_FEATURES},
     {":conditions", CONDITIONS},
     {":effects", EFFECTS},
     {":c_b_pos", C_B_POS},
@@ -40,13 +40,19 @@ EXPRESSION_TYPE ExpressionFactory::element_name_to_expression_type(const std::st
     return p->second;
 }
 
-Expression_Ptr ExpressionFactory::make_expression(const std::string &name, std::vector<Expression_Ptr> &&children) {
+std::unique_ptr<Expression> ExpressionFactory::make_expression(const std::string &name, std::vector<std::unique_ptr<Expression>> &&children) {
     if (ExpressionFactory::exists_element_name(name)) {
         EXPRESSION_TYPE expression_type = ExpressionFactory::element_name_to_expression_type(name);
         switch (expression_type)
         {
             case POLICY: {
                 return std::make_unique<PolicyExpression>(PolicyExpression(name, std::move(children)));
+            }
+            case BOOLEANS: {
+                return std::make_unique<BooleansExpression>(BooleansExpression(name, std::move(children)));
+            }
+            case NUMERICALS: {
+                return std::make_unique<NumericalsExpression>(NumericalsExpression(name, std::move(children)));
             }
             case RULE: {
                 return std::make_unique<RuleExpression>(RuleExpression(name, std::move(children)));
@@ -56,12 +62,6 @@ Expression_Ptr ExpressionFactory::make_expression(const std::string &name, std::
             }
             case EFFECTS: {
                 return std::make_unique<EffectsExpression>(EffectsExpression(name, std::move(children)));
-            }
-            case BOOLEAN_FEATURES: {
-                return std::make_unique<BooleansExpression>(BooleansExpression(name, std::move(children)));
-            }
-            case NUMERICAL_FEATURES: {
-                return std::make_unique<NumericalsExpression>(NumericalsExpression(name, std::move(children)));
             }
             case C_B_POS: {
                 return std::make_unique<PositiveBooleanConditionExpression>(PositiveBooleanConditionExpression(name, std::move(children)));
@@ -94,10 +94,8 @@ Expression_Ptr ExpressionFactory::make_expression(const std::string &name, std::
                 return std::make_unique<UnchangedNumericalEffectExpression>(UnchangedNumericalEffectExpression(name, std::move(children)));
             }
         }
-    } else if (is_number(name)) {
-        return std::make_unique<Expression>(Expression(name, std::move(children)));
     }
-    throw std::runtime_error("Test: ExpressionFactory::make_expression - No implementation available for (" + name + ").");
+    return std::make_unique<Expression>(Expression(name, std::move(children)));
 }
 
 

@@ -1,57 +1,60 @@
 #ifndef DLPLAN_SRC_CORE_ELEMENTS_CONCEPTS_SOME_H_
 #define DLPLAN_SRC_CORE_ELEMENTS_CONCEPTS_SOME_H_
 
-#include "../concept.h"
-#include "../role.h"
+#include "../utils.h"
+
+#include "../../../../include/dlplan/core.h"
+
+#include <sstream>
+
+using namespace std::string_literals;
 
 
-namespace dlplan::core::element {
+namespace dlplan::core {
 
 class SomeConcept : public Concept {
 private:
     void compute_result(const RoleDenotation& role_denot, const ConceptDenotation& concept_denot, ConceptDenotation& result) const {
         // find examples a : exists b . (a,b) in R and b in C
-        for (const auto& pair : role_denot) {
+        for (const auto& pair : role_denot.to_vector()) {
             if (concept_denot.contains(pair.second)) {
                 result.insert(pair.first);
             }
         }
     }
 
-    std::unique_ptr<ConceptDenotation> evaluate_impl(const State& state, DenotationsCaches& caches) const override {
-        auto denotation = std::make_unique<ConceptDenotation>(
-            ConceptDenotation(state.get_instance_info_ref().get_num_objects()));
+    ConceptDenotation evaluate_impl(const State& state, DenotationsCaches& caches) const override {
+        ConceptDenotation denotation(state.get_instance_info()->get_objects().size());
         compute_result(
             *m_role->evaluate(state, caches),
             *m_concept->evaluate(state, caches),
-            *denotation);
+            denotation);
         return denotation;
     }
 
-    std::unique_ptr<ConceptDenotations> evaluate_impl(const States& states, DenotationsCaches& caches) const override {
-        auto denotations = std::make_unique<ConceptDenotations>();
-        denotations->reserve(states.size());
+    ConceptDenotations evaluate_impl(const States& states, DenotationsCaches& caches) const override {
+        ConceptDenotations denotations;
+        denotations.reserve(states.size());
         auto role_denotations = m_role->evaluate(states, caches);
         auto concept_denotations = m_concept->evaluate(states, caches);
         for (size_t i = 0; i < states.size(); ++i) {
-            auto denotation = std::make_unique<ConceptDenotation>(
-                ConceptDenotation(states[i].get_instance_info_ref().get_num_objects()));
+            ConceptDenotation denotation(states[i].get_instance_info()->get_objects().size());
             compute_result(
                 *(*role_denotations)[i],
                 *(*concept_denotations)[i],
-                *denotation);
-            denotations->push_back(caches.m_c_denot_cache.insert(std::move(denotation)).first->get());
+                denotation);
+            denotations.push_back(caches.get_concept_denotation_cache().insert_denotation(std::move(denotation)));
         }
         return denotations;
     }
 
 protected:
-    const Role_Ptr m_role;
-    const Concept_Ptr m_concept;
+    const std::shared_ptr<const Role> m_role;
+    const std::shared_ptr<const Concept> m_concept;
 
 public:
-    SomeConcept(const VocabularyInfo& vocabulary, Role_Ptr role, Concept_Ptr concept)
-    : Concept(vocabulary, role->get_is_static() && concept->get_is_static()),
+    SomeConcept(std::shared_ptr<const VocabularyInfo> vocabulary_info, std::shared_ptr<const Role> role, std::shared_ptr<const Concept> concept)
+    : Concept(vocabulary_info, role->is_static() && concept->is_static()),
       m_role(role), m_concept(concept) {
         if (!(role && concept)) {
             throw std::runtime_error("SomeConcept::SomeConcept - at least one child is a nullptr");
@@ -59,7 +62,7 @@ public:
     }
 
     ConceptDenotation evaluate(const State& state) const override {
-        auto denotation = ConceptDenotation(state.get_instance_info_ref().get_num_objects());
+        auto denotation = ConceptDenotation(state.get_instance_info()->get_objects().size());
         compute_result(
             m_role->evaluate(state),
             m_concept->evaluate(state),
@@ -77,6 +80,10 @@ public:
         out << ",";
         m_concept->compute_repr(out);
         out << ")";
+    }
+
+    int compute_evaluate_time_score() const override {
+        return m_role->compute_evaluate_time_score() + m_concept->compute_evaluate_time_score() + SCORE_QUADRATIC;
     }
 
     static std::string get_name() {

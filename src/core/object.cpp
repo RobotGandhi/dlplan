@@ -1,8 +1,10 @@
 #include "../../include/dlplan/core.h"
 
+#include <sstream>
+
 
 namespace dlplan::core {
-Object::Object(const std::string& name, int index)
+Object::Object(const std::string& name, ObjectIndex index)
     : m_name(name), m_index(index) { }
 
 Object::Object(const Object& other) = default;
@@ -16,19 +18,36 @@ Object& Object::operator=(Object&& other) = default;
 Object::~Object() = default;
 
 bool Object::operator==(const Object& other) const {
-    // our construction ensures that there are not two objects with same index and same root.
-    return (get_index() == other.get_index()) && (get_name_ref() == other.get_name_ref());
+    return (get_index() == other.get_index()) && (get_name() == other.get_name());
 }
 
 bool Object::operator!=(const Object& other) const {
     return !(*this == other);
 }
 
-const std::string& Object::get_name_ref() const {
+std::string Object::compute_repr() const {
+    std::stringstream ss;
+    ss << "Object("
+       << "index=" << m_index << ", "
+       << "name=" << m_name
+       << ")";
+    return ss.str();
+}
+
+std::ostream& operator<<(std::ostream& os, const Object& object) {
+    os << object.compute_repr();
+    return os;
+}
+
+std::string Object::str() const {
+    return compute_repr();
+}
+
+const std::string& Object::get_name() const {
     return m_name;
 }
 
-int Object::get_index() const {
+ObjectIndex Object::get_index() const {
     return m_index;
 }
 

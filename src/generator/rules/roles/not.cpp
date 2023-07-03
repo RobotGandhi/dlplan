@@ -11,9 +11,9 @@ void NotRole::generate_impl(const core::States& states, int target_complexity, G
     core::SyntacticElementFactory& factory = data.m_factory;
     for (const auto& r : data.m_roles_by_iteration[target_complexity-1]) {
         auto element = factory.make_not_role(r);
-        auto denotations = element.get_element_ref().evaluate(states, caches);
+        auto denotations = element->evaluate(states, caches);
         if (data.m_role_hash_table.insert(denotations).second) {
-            data.m_reprs.push_back(element.compute_repr());
+            data.m_reprs.push_back(element->compute_repr());
             data.m_roles_by_iteration[target_complexity].push_back(std::move(element));
             increment_generated();
         }
@@ -21,7 +21,7 @@ void NotRole::generate_impl(const core::States& states, int target_complexity, G
 }
 
 std::string NotRole::get_name() const {
-    return core::element::NotRole::get_name();
+    return core::NotRole::get_name();
 }
 
 }

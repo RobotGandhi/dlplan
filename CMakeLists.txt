@@ -28,13 +28,6 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
         STRING "Choose the type of build." FORCE)
 endif()
 
-OPTION(ENABLE_SPARSE "Enables sparse representation for ConceptDenotation and RoleDenotation" OFF)
-if (ENABLE_SPARSE)
-    MESSAGE("Building with sparse set representation. Recommended for large number of objects.")
-else()
-    MESSAGE("Building with bitset representation. Recommended for small number of objects.")
-endif()
-
 OPTION(ENABLE_TESTING "Enables compilation of tests." OFF)
 if (ENABLE_TESTING)
     MESSAGE("Building tests enabled.")
@@ -60,20 +53,4 @@ endif()
 if(DLPLAN_PYTHON)
   # For the dynamic library to be compatible with Python we need the -fPIC flags
   add_subdirectory(api/python)
-endif()
-
-## Compile the scorpion planer
-# https://stackoverflow.com/questions/2937128/cmake-add-custom-command-not-being-run
-if (BUILD_SSE)
-    find_package(Python COMPONENTS Interpreter REQUIRED)
-    message("${PROJECT_SOURCE_DIR}/libs/downward-sse/planners/downward-sse/build.py")
-    add_custom_command(
-    OUTPUT compile_sse
-    COMMAND "${PROJECT_SOURCE_DIR}/libs/downward-sse/planners/downward-sse/build.py"
-    )
-    add_custom_target(
-    sse
-    DEPENDS compile_sse
-    )
-    add_dependencies(dlplanstatespace sse)
 endif()

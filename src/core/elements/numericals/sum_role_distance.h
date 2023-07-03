@@ -1,13 +1,16 @@
 #ifndef DLPLAN_SRC_CORE_ELEMENTS_NUMERICAL_SUM_ROLE_DISTANCE_H_
 #define DLPLAN_SRC_CORE_ELEMENTS_NUMERICAL_SUM_ROLE_DISTANCE_H_
 
-#include "../numerical.h"
-#include "../concept.h"
-#include "../role.h"
 #include "../utils.h"
 
+#include "../../../../include/dlplan/core.h"
 
-namespace dlplan::core::element {
+#include <sstream>
+
+using namespace std::string_literals;
+
+
+namespace dlplan::core {
 
 class SumRoleDistanceNumerical : public Numerical {
 private:
@@ -45,19 +48,19 @@ private:
         return denotation;
     }
 
-    std::unique_ptr<NumericalDenotations> evaluate_impl(const States& states, DenotationsCaches& caches) const override {
-        auto denotations = std::make_unique<NumericalDenotations>();
-        denotations->reserve(states.size());
+    NumericalDenotations evaluate_impl(const States& states, DenotationsCaches& caches) const override {
+        NumericalDenotations denotations;
+        denotations.reserve(states.size());
         auto role_from_denots = m_role_from->evaluate(states, caches);
         auto role_denots = m_role->evaluate(states, caches);
         auto role_to_denots = m_role_to->evaluate(states, caches);
         for (size_t i = 0; i < states.size(); ++i) {
             if ((*role_from_denots)[i]->empty()) {
-                denotations->push_back(INF);
+                denotations.push_back(INF);
                 continue;
             }
             if ((*role_to_denots)[i]->empty()) {
-                denotations->push_back(INF);
+                denotations.push_back(INF);
                 continue;
             }
             int denotation;
@@ -66,19 +69,19 @@ private:
                 *(*role_denots)[i],
                 *(*role_to_denots)[i],
                 denotation);
-            denotations->push_back(denotation);
+            denotations.push_back(denotation);
         }
         return denotations;
     }
 
 protected:
-    const Role_Ptr m_role_from;
-    const Role_Ptr m_role;
-    const Role_Ptr m_role_to;
+    const std::shared_ptr<const Role> m_role_from;
+    const std::shared_ptr<const Role> m_role;
+    const std::shared_ptr<const Role> m_role_to;
 
 public:
-    SumRoleDistanceNumerical(const VocabularyInfo& vocabulary, Role_Ptr role_from, Role_Ptr role, Role_Ptr role_to)
-    : Numerical(vocabulary, role_from->get_is_static() && role->get_is_static() && role_to->get_is_static()),
+    SumRoleDistanceNumerical(std::shared_ptr<const VocabularyInfo> vocabulary_info, std::shared_ptr<const Role> role_from, std::shared_ptr<const Role> role, std::shared_ptr<const Role> role_to)
+    : Numerical(vocabulary_info, role_from->is_static() && role->is_static() && role_to->is_static()),
       m_role_from(role_from), m_role(role), m_role_to(role_to) {
         if (!(role_from && role && role_to)) {
             throw std::runtime_error("SumRoleDistanceNumerical::SumRoleDistanceNumerical - child is not of type Role, Role, Role.");
@@ -112,6 +115,10 @@ public:
         out << ",";
         m_role_to->compute_repr(out);
         out << ")";
+    }
+
+    int compute_evaluate_time_score() const override {
+        return m_role_from->compute_evaluate_time_score() + m_role->compute_evaluate_time_score() + m_role_to->compute_evaluate_time_score() + SCORE_QUBIC;
     }
 
     static std::string get_name() {

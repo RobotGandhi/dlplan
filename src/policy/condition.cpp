@@ -4,11 +4,36 @@
 namespace dlplan::policy {
 
 BooleanCondition::BooleanCondition(std::shared_ptr<const core::Boolean> boolean)
-    : BaseCondition(boolean), m_boolean(boolean) { }
+    : BaseCondition(), m_boolean(boolean) { }
+
+int BooleanCondition::compute_evaluate_time_score() const {
+    return m_boolean->compute_evaluate_time_score();
+}
+
+std::shared_ptr<const core::Boolean> BooleanCondition::get_boolean() const {
+    return m_boolean;
+}
+
+std::shared_ptr<const core::Numerical> BooleanCondition::get_numerical() const {
+    return nullptr;
+}
 
 
 NumericalCondition::NumericalCondition(std::shared_ptr<const core::Numerical> numerical)
-    : BaseCondition(numerical), m_numerical(numerical) { }
+    : BaseCondition(), m_numerical(numerical) { }
+
+int NumericalCondition::compute_evaluate_time_score() const {
+    return m_numerical->compute_evaluate_time_score();
+}
+
+std::shared_ptr<const core::Boolean> NumericalCondition::get_boolean() const {
+    return nullptr;
+}
+
+std::shared_ptr<const core::Numerical> NumericalCondition::get_numerical() const {
+    return m_numerical;
+}
+
 
 
 PositiveBooleanCondition::PositiveBooleanCondition(std::shared_ptr<const core::Boolean> boolean_feature)
@@ -23,11 +48,11 @@ bool PositiveBooleanCondition::evaluate(const core::State& source_state, core::D
 }
 
 std::string PositiveBooleanCondition::compute_repr() const {
-    return "(:c_b_pos " + std::to_string(m_boolean->get_index()) + ")";
+    return "(:c_b_pos \"" + m_boolean->compute_repr() + "\")";
 }
 
-std::shared_ptr<const BaseCondition> PositiveBooleanCondition::copy_to_builder(PolicyBuilder& policy_builder) const {
-    return policy_builder.add_pos_condition(policy_builder.add_boolean_feature(*m_boolean));
+std::string PositiveBooleanCondition::str() const {
+    return "(:c_b_pos " + std::to_string(m_boolean->get_index()) + ")";
 }
 
 
@@ -43,11 +68,11 @@ bool NegativeBooleanCondition::evaluate(const core::State& source_state, core::D
 }
 
 std::string NegativeBooleanCondition::compute_repr() const {
-    return "(:c_b_neg " + std::to_string(m_boolean->get_index()) + ")";
+    return "(:c_b_neg \"" + m_boolean->compute_repr() + "\")";
 }
 
-std::shared_ptr<const BaseCondition> NegativeBooleanCondition::copy_to_builder(PolicyBuilder& policy_builder) const {
-    return policy_builder.add_neg_condition(policy_builder.add_boolean_feature(*m_boolean));
+std::string NegativeBooleanCondition::str() const {
+    return "(:c_b_neg " + std::to_string(m_boolean->get_index()) + ")";
 }
 
 
@@ -63,11 +88,11 @@ bool EqualNumericalCondition::evaluate(const core::State& source_state, core::De
 }
 
 std::string EqualNumericalCondition::compute_repr() const {
-    return "(:c_n_eq " + std::to_string(m_numerical->get_index()) + ")";
+    return "(:c_n_eq \"" + m_numerical->compute_repr() + "\")";
 }
 
-std::shared_ptr<const BaseCondition> EqualNumericalCondition::copy_to_builder(PolicyBuilder& policy_builder) const {
-    return policy_builder.add_eq_condition(policy_builder.add_numerical_feature(*m_numerical));
+std::string EqualNumericalCondition::str() const {
+    return "(:c_n_eq " + std::to_string(m_numerical->get_index()) + ")";
 }
 
 
@@ -83,11 +108,11 @@ bool GreaterNumericalCondition::evaluate(const core::State& source_state, core::
 }
 
 std::string GreaterNumericalCondition::compute_repr() const {
-    return "(:c_n_gt " + std::to_string(m_numerical->get_index()) + ")";
+    return "(:c_n_gt \"" + m_numerical->compute_repr() + "\")";
 }
 
-std::shared_ptr<const BaseCondition> GreaterNumericalCondition::copy_to_builder(PolicyBuilder& policy_builder) const {
-    return policy_builder.add_gt_condition(policy_builder.add_numerical_feature(*m_numerical));
+std::string GreaterNumericalCondition::str() const {
+    return "(:c_n_gt " + std::to_string(m_numerical->get_index()) + ")";
 }
 
 }

@@ -8,51 +8,35 @@
 
 #include "../../include/dlplan/policy.h"
 
+#include <iostream>
+
 
 namespace dlplan::policy {
 
 
-BaseCondition::BaseCondition(std::shared_ptr<const core::BaseElement> base_feature, int index)
-    : m_base_feature(base_feature), m_index(index) { }
+BaseCondition::BaseCondition() { }
 
 BaseCondition::~BaseCondition() = default;
 
-void BaseCondition::set_index(int index) {
+void BaseCondition::set_index(ConditionIndex index) {
     m_index = index;
 }
 
-int BaseCondition::get_index() const {
+ConditionIndex BaseCondition::get_index() const {
     return m_index;
 }
 
-std::shared_ptr<const core::BaseElement> BaseCondition::get_base_feature() const {
-    return m_base_feature;
-}
 
-std::string BaseCondition::str() const {
-    return compute_repr();
-}
-
-
-BaseEffect::BaseEffect(std::shared_ptr<const core::BaseElement> base_feature, int index)
-    : m_base_feature(base_feature), m_index(index) { }
+BaseEffect::BaseEffect() { }
 
 BaseEffect::~BaseEffect() = default;
 
-void BaseEffect::set_index(int index) {
+void BaseEffect::set_index(EffectIndex index) {
     m_index = index;
 }
 
-int BaseEffect::get_index() const {
+EffectIndex BaseEffect::get_index() const {
     return m_index;
-}
-
-std::shared_ptr<const core::BaseElement> BaseEffect::get_base_feature() const {
-    return m_base_feature;
-}
-
-std::string BaseEffect::str() const {
-    return compute_repr();
 }
 
 
@@ -80,62 +64,55 @@ PolicyBuilder& PolicyBuilder::operator=(PolicyBuilder&& other) {
 
 PolicyBuilder::~PolicyBuilder() = default;
 
-std::shared_ptr<const core::Boolean> PolicyBuilder::add_boolean_feature(core::Boolean boolean) {
-    return m_pImpl->add_boolean_feature(boolean);
+std::shared_ptr<const BaseCondition> PolicyBuilder::add_pos_condition(const std::shared_ptr<const core::Boolean>& boolean) {
+    return m_pImpl->add_pos_condition(boolean);
 }
 
-std::shared_ptr<const core::Numerical> PolicyBuilder::add_numerical_feature(core::Numerical numerical) {
-    return m_pImpl->add_numerical_feature(numerical);
+std::shared_ptr<const BaseCondition> PolicyBuilder::add_neg_condition(const std::shared_ptr<const core::Boolean>& boolean) {
+    return m_pImpl->add_neg_condition(boolean);
 }
 
-std::shared_ptr<const BaseCondition> PolicyBuilder::add_pos_condition(std::shared_ptr<const core::Boolean> b) {
-    return m_pImpl->add_pos_condition(b);
+std::shared_ptr<const BaseCondition> PolicyBuilder::add_gt_condition(const std::shared_ptr<const core::Numerical>& numerical) {
+    return m_pImpl->add_gt_condition(numerical);
 }
 
-std::shared_ptr<const BaseCondition> PolicyBuilder::add_neg_condition(std::shared_ptr<const core::Boolean> b) {
-    return m_pImpl->add_neg_condition(b);
+std::shared_ptr<const BaseCondition> PolicyBuilder::add_eq_condition(const std::shared_ptr<const core::Numerical>& numerical) {
+    return m_pImpl->add_eq_condition(numerical);
 }
 
-std::shared_ptr<const BaseCondition> PolicyBuilder::add_gt_condition(std::shared_ptr<const core::Numerical> n) {
-    return m_pImpl->add_gt_condition(n);
+std::shared_ptr<const BaseEffect> PolicyBuilder::add_pos_effect(const std::shared_ptr<const core::Boolean>& boolean) {
+    return m_pImpl->add_pos_effect(boolean);
 }
 
-std::shared_ptr<const BaseCondition> PolicyBuilder::add_eq_condition(std::shared_ptr<const core::Numerical> n) {
-    return m_pImpl->add_eq_condition(n);
+std::shared_ptr<const BaseEffect> PolicyBuilder::add_neg_effect(const std::shared_ptr<const core::Boolean>& boolean) {
+    return m_pImpl->add_neg_effect(boolean);
 }
 
-std::shared_ptr<const BaseEffect> PolicyBuilder::add_pos_effect(std::shared_ptr<const core::Boolean> b) {
-    return m_pImpl->add_pos_effect(b);
+std::shared_ptr<const BaseEffect> PolicyBuilder::add_bot_effect(const std::shared_ptr<const core::Boolean>& boolean) {
+    return m_pImpl->add_bot_effect(boolean);
 }
 
-std::shared_ptr<const BaseEffect> PolicyBuilder::add_neg_effect(std::shared_ptr<const core::Boolean> b) {
-    return m_pImpl->add_neg_effect(b);
+std::shared_ptr<const BaseEffect> PolicyBuilder::add_inc_effect(const std::shared_ptr<const core::Numerical>& numerical) {
+    return m_pImpl->add_inc_effect(numerical);
 }
 
-std::shared_ptr<const BaseEffect> PolicyBuilder::add_bot_effect(std::shared_ptr<const core::Boolean> b) {
-    return m_pImpl->add_bot_effect(b);
+std::shared_ptr<const BaseEffect> PolicyBuilder::add_dec_effect(const std::shared_ptr<const core::Numerical>& numerical) {
+    return m_pImpl->add_dec_effect(numerical);
 }
 
-std::shared_ptr<const BaseEffect> PolicyBuilder::add_inc_effect(std::shared_ptr<const core::Numerical> n) {
-    return m_pImpl->add_inc_effect(n);
-}
-
-std::shared_ptr<const BaseEffect> PolicyBuilder::add_dec_effect(std::shared_ptr<const core::Numerical> n) {
-    return m_pImpl->add_dec_effect(n);
-}
-
-std::shared_ptr<const BaseEffect> PolicyBuilder::add_bot_effect(std::shared_ptr<const core::Numerical> n) {
-    return m_pImpl->add_bot_effect(n);
+std::shared_ptr<const BaseEffect> PolicyBuilder::add_bot_effect(const std::shared_ptr<const core::Numerical>& numerical) {
+    return m_pImpl->add_bot_effect(numerical);
 }
 
 std::shared_ptr<const Rule> PolicyBuilder::add_rule(
-    std::vector<std::shared_ptr<const BaseCondition>>&& conditions,
-    std::vector<std::shared_ptr<const BaseEffect>>&& effects) {
+    Conditions&& conditions,
+    Effects&& effects) {
     return m_pImpl->add_rule(std::move(conditions), std::move(effects));
 }
 
-Policy PolicyBuilder::get_result() {
-    return m_pImpl->get_result();
+std::shared_ptr<const Policy> PolicyBuilder::add_policy(
+    Rules&& rules) {
+    return m_pImpl->add_policy(std::move(rules));
 }
 
 
@@ -163,8 +140,8 @@ PolicyReader& PolicyReader::operator=(PolicyReader&& other) {
 
 PolicyReader::~PolicyReader() = default;
 
-Policy PolicyReader::read(const std::string& data, core::SyntacticElementFactory& factory) const {
-    return m_pImpl->read(data, factory);
+std::shared_ptr<const Policy> PolicyReader::read(const std::string& data, PolicyBuilder& builder, core::SyntacticElementFactory& factory) const {
+    return m_pImpl->read(data, builder, factory);
 }
 
 

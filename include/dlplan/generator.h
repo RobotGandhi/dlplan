@@ -1,3 +1,6 @@
+/// @brief Provides functionality for automatically generating a set of domain-general
+///        state features that are distinguishable on a given finite set of states.
+
 #ifndef DLPLAN_INCLUDE_DLPLAN_GENERATOR_H_
 #define DLPLAN_INCLUDE_DLPLAN_GENERATOR_H_
 
@@ -8,24 +11,16 @@
 #include <vector>
 
 
-/**
- * Forward declarations and usings
- */
 namespace dlplan::generator {
-    class FeatureGeneratorImpl;
+class FeatureGeneratorImpl;
+using States = std::vector<core::State>;
+using FeatureRepresentations = std::vector<std::string>;
 
-    using States = std::vector<core::State>;
-    using FeatureRepresentations = std::vector<std::string>;
-}
-
-
-namespace dlplan::generator {
-/**
- * FeatureGenerator exhaustively generates features up to the complexity bound or until the time limit was reached.
- */
+/// @brief Provides functionality for automatically generating state features
+///        that are distinguishable on a finite set of states.
 class FeatureGenerator {
 private:
-    utils::pimpl<FeatureGeneratorImpl> m_pImpl;
+    dlplan::utils::pimpl<FeatureGeneratorImpl> m_pImpl;
 
 public:
     FeatureGenerator();
@@ -35,20 +30,16 @@ public:
     FeatureGenerator& operator=(FeatureGenerator&& other);
     ~FeatureGenerator();
 
-    /**
-     * Exhaustively generates features with pairwise disjoint feature evaluations on the states.
-     */
     FeatureRepresentations generate(
         core::SyntacticElementFactory& factory,
-        int concept_complexity_limit,
-        int role_complexity_limit,
-        int boolean_complexity_limit,
-        int count_numerical_complexity_limit,
-        int distance_numerical_complexity_limit,
-        int time_limit,
-        int feature_limit,
-        int num_threads,
-        const core::States& states);
+        const core::States& states,
+        int concept_complexity_limit=9,
+        int role_complexity_limit=9,
+        int boolean_complexity_limit=9,
+        int count_numerical_complexity_limit=9,
+        int distance_numerical_complexity_limit=9,
+        int time_limit=3600,
+        int feature_limit=10000);
 
     void set_generate_empty_boolean(bool enable);
     void set_generate_inclusion_boolean(bool enable);
@@ -83,6 +74,47 @@ public:
 };
 
 
+/// @brief Generates state features that are distinguishable on a finite set of states.
+extern FeatureRepresentations generate_features(
+    core::SyntacticElementFactory& factory,
+    const core::States& states,
+    int concept_complexity_limit=9,
+    int role_complexity_limit=9,
+    int boolean_complexity_limit=9,
+    int count_numerical_complexity_limit=9,
+    int distance_numerical_complexity_limit=9,
+    int time_limit=3600,
+    int feature_limit=10000,
+    bool generate_empty_boolean=true,
+    bool generate_inclusion_boolean=false,
+    bool generate_nullary_boolean=true,
+    bool generate_all_concept=true,
+    bool generate_and_concept=true,
+    bool generate_bot_concept=true,
+    bool generate_diff_concept=false,
+    bool generate_equal_concept=true,
+    bool generate_not_concept=true,
+    bool generate_one_of_concept=true,
+    bool generate_or_concept=false,
+    bool generate_primitive_concept=true,
+    bool generate_projection_concept=false,
+    bool generate_some_concept=true,
+    bool generate_subset_concept=false,
+    bool generate_top_concept=true,
+    bool generate_concept_distance_numerical=true,
+    bool generate_count_numerical=true,
+    bool generate_and_role=true,
+    bool generate_compose_role=false,
+    bool generate_diff_role=false,
+    bool generate_identity_role=false,
+    bool generate_inverse_role=true,
+    bool generate_not_role=false,
+    bool generate_or_role=false,
+    bool generate_primitive_role=true,
+    bool generate_restrict_role=true,
+    bool generate_top_role=false,
+    bool generate_transitive_closure_role=true,
+    bool generate_transitive_reflexive_closure_role=false);
 }
 
 #endif

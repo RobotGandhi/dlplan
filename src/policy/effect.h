@@ -19,6 +19,11 @@ protected:
 
 protected:
     BooleanEffect(std::shared_ptr<const core::Boolean> boolean);
+
+    int compute_evaluate_time_score() const override;
+
+    std::shared_ptr<const core::Boolean> get_boolean() const override;
+    std::shared_ptr<const core::Numerical> get_numerical() const override;
 };
 
 
@@ -28,6 +33,11 @@ protected:
 
 protected:
     NumericalEffect(std::shared_ptr<const core::Numerical> numerical);
+
+    int compute_evaluate_time_score() const override;
+
+    std::shared_ptr<const core::Boolean> get_boolean() const override;
+    std::shared_ptr<const core::Numerical> get_numerical() const override;
 };
 
 
@@ -39,8 +49,7 @@ public:
     bool evaluate(const core::State& source_state, const core::State& target_state, core::DenotationsCaches& caches) const override;
 
     std::string compute_repr() const override;
-
-    std::shared_ptr<const BaseEffect> copy_to_builder(PolicyBuilder& policy_builder) const override;
+    std::string str() const override;
 };
 
 class NegativeBooleanEffect : public BooleanEffect {
@@ -51,8 +60,7 @@ public:
     bool evaluate(const core::State& source_state, const core::State& target_state, core::DenotationsCaches& caches) const override;
 
     std::string compute_repr() const override;
-
-    std::shared_ptr<const BaseEffect> copy_to_builder(PolicyBuilder& policy_builder) const override;
+    std::string str() const override;
 };
 
 class UnchangedBooleanEffect : public BooleanEffect {
@@ -63,8 +71,7 @@ public:
     bool evaluate(const core::State& source_state, const core::State& target_state, core::DenotationsCaches& caches) const override;
 
     std::string compute_repr() const override;
-
-    std::shared_ptr<const BaseEffect> copy_to_builder(PolicyBuilder& policy_builder) const override;
+    std::string str() const override;
 };
 
 class IncrementNumericalEffect : public NumericalEffect {
@@ -75,8 +82,7 @@ public:
     bool evaluate(const core::State& source_state, const core::State& target_state, core::DenotationsCaches& caches) const override;
 
     std::string compute_repr() const override;
-
-    std::shared_ptr<const BaseEffect> copy_to_builder(PolicyBuilder& policy_builder) const override;
+    std::string str() const override;
 };
 
 class DecrementNumericalEffect : public NumericalEffect {
@@ -87,8 +93,7 @@ public:
     bool evaluate(const core::State& source_state, const core::State& target_state, core::DenotationsCaches& caches) const override;
 
     std::string compute_repr() const override;
-
-    std::shared_ptr<const BaseEffect> copy_to_builder(PolicyBuilder& policy_builder) const override;
+    std::string str() const override;
 };
 
 class UnchangedNumericalEffect : public NumericalEffect {
@@ -99,8 +104,7 @@ public:
     bool evaluate(const core::State& source_state, const core::State& target_state, core::DenotationsCaches& caches) const override;
 
     std::string compute_repr() const override;
-
-    std::shared_ptr<const BaseEffect> copy_to_builder(PolicyBuilder& policy_builder) const override;
+    std::string str() const override;
 };
 
 }

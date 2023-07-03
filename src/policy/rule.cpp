@@ -8,29 +8,9 @@
 
 namespace dlplan::policy {
 
-/**
- * For sorting conditions and effects according to their unique representation.
- */
-template<typename pT>
-static std::vector<pT> sort_by_feature_index_then_repr(const std::vector<pT>& set) {
-    std::vector<pT> result(set.begin(), set.end());
-    std::sort(
-        result.begin(),
-        result.end(),
-        [](const auto& l, const auto& r){
-            if (l->get_base_feature()->get_index() != r->get_base_feature()->get_index()) {
-                return l->get_base_feature()->get_index() < r->get_base_feature()->get_index();
-            }
-            return l->compute_repr() < r->compute_repr();
-        });
-    return result;
+Rule::Rule(Conditions&& conditions, Effects&& effects)
+    : m_conditions(std::move(conditions)), m_effects(std::move(effects)) {
 }
-
-Rule::Rule(
-    std::vector<std::shared_ptr<const BaseCondition>>&& conditions,
-    std::vector<std::shared_ptr<const BaseEffect>>&& effects,
-    int index)
-    : m_conditions(std::move(conditions)), m_effects(std::move(effects)), m_index(index) { }
 
 Rule::~Rule() = default;
 
@@ -65,16 +45,26 @@ bool Rule::evaluate_effects(const core::State& source_state, const core::State& 
 std::string Rule::compute_repr() const {
     std::stringstream ss;
     ss << "(:rule (:conditions ";
-    for (const auto& c : m_conditions) {
+    // sort conditions by repr to obtain canonical representation
+    std::vector<std::shared_ptr<const BaseCondition>> sorted_conditions(m_conditions.begin(), m_conditions.end());
+    std::sort(sorted_conditions.begin(), sorted_conditions.end(), [&](const auto& l, const auto& r){
+        return l->compute_repr() < r->compute_repr();
+    });
+    for (const auto& c : sorted_conditions) {
         ss << c->compute_repr();
-        if (c != m_conditions.back()) {
+        if (c != *sorted_conditions.rbegin()) {
             ss << " ";
         }
     }
     ss << ") (:effects ";
-    for (const auto& e : m_effects) {
+    // sort conditions by repr to obtain canonical representation
+    std::vector<std::shared_ptr<const BaseEffect>> sorted_effects(m_effects.begin(), m_effects.end());
+    std::sort(sorted_effects.begin(), sorted_effects.end(), [&](const auto& l, const auto& r){
+        return l->compute_repr() < r->compute_repr();
+    });
+    for (const auto& e : sorted_effects) {
         ss << e->compute_repr();
-        if (e != m_effects.back()) {
+        if (e != *sorted_effects.rbegin()) {
             ss << " ";
         }
     }
@@ -85,20 +75,16 @@ std::string Rule::compute_repr() const {
 std::string Rule::str() const {
     std::stringstream ss;
     ss << "(:rule (:conditions ";
-    // canonical representation of conditions
-    const auto sorted_conditions = sort_by_feature_index_then_repr(m_conditions);
-    for (const auto& c : sorted_conditions) {
-        ss << c->compute_repr();
-        if (c != sorted_conditions.back()) {
+    for (const auto& c : m_conditions) {
+        ss << c->str();
+        if (c != *m_conditions.rbegin()) {
             ss << " ";
         }
     }
     ss << ") (:effects ";
-    // canonical representation of effects
-    const auto sorted_effects = sort_by_feature_index_then_repr(m_effects);
-    for (const auto& e : sorted_effects) {
-        ss << e->compute_repr();
-        if (e != sorted_effects.back()) {
+    for (const auto& e : m_effects) {
+        ss << e->str();
+        if (e != *m_effects.rbegin()) {
             ss << " ";
         }
     }
@@ -106,33 +92,30 @@ std::string Rule::str() const {
     return ss.str();
 }
 
-std::shared_ptr<const Rule> Rule::copy_to_builder(PolicyBuilder& policy_builder) const {
-    std::vector<std::shared_ptr<const BaseCondition>> conditions;
-    conditions.reserve(m_conditions.size());
+int Rule::compute_evaluate_time_score() const {
+    int score = 0;
     for (const auto& condition : m_conditions) {
-        conditions.push_back(condition->copy_to_builder(policy_builder));
+        score += condition->compute_evaluate_time_score();
     }
-    std::vector<std::shared_ptr<const BaseEffect>> effects;
-    effects.reserve(m_effects.size());
     for (const auto& effect : m_effects) {
-        effects.push_back(effect->copy_to_builder(policy_builder));
+        score += effect->compute_evaluate_time_score();
     }
-    return policy_builder.add_rule(std::move(conditions), std::move(effects));
+    return score;
 }
 
-void Rule::set_index(int index) {
+void Rule::set_index(RuleIndex index) {
     m_index = index;
 }
 
-int Rule::get_index() const {
+RuleIndex Rule::get_index() const {
     return m_index;
 }
 
-std::vector<std::shared_ptr<const BaseCondition>> Rule::get_conditions() const {
+const Conditions& Rule::get_conditions() const {
     return m_conditions;
 }
 
-std::vector<std::shared_ptr<const BaseEffect>> Rule::get_effects() const {
+const Effects& Rule::get_effects() const {
     return m_effects;
 }
 

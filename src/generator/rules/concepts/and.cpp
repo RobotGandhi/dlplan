@@ -13,9 +13,9 @@ void AndConcept::generate_impl(const core::States& states, int target_complexity
         for (const auto& c1 : data.m_concepts_by_iteration[i]) {
             for (const auto& c2 : data.m_concepts_by_iteration[j]) {
                 auto element = factory.make_and_concept(c1, c2);
-                auto denotations = element.get_element_ref().evaluate(states, caches);
+                auto denotations = element->evaluate(states, caches);
                 if (data.m_concept_hash_table.insert(denotations).second) {
-                    data.m_reprs.push_back(element.compute_repr());
+                    data.m_reprs.push_back(element->compute_repr());
                     data.m_concepts_by_iteration[target_complexity].push_back(std::move(element));
                     increment_generated();
                 }
@@ -25,7 +25,7 @@ void AndConcept::generate_impl(const core::States& states, int target_complexity
 }
 
 std::string AndConcept::get_name() const {
-    return core::element::AndConcept::get_name();
+    return core::AndConcept::get_name();
 }
 
 }

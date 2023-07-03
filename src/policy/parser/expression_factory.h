@@ -3,15 +3,16 @@
 
 #include <unordered_map>
 #include <vector>
-
-#include "types.h"
+#include <string>
+#include <memory>
 
 
 namespace dlplan::policy::parser {
+class Expression;
 
 enum EXPRESSION_TYPE {
-    BOOLEAN_FEATURES,
-    NUMERICAL_FEATURES,
+    BOOLEANS,
+    NUMERICALS,
     CONDITIONS,
     EFFECTS,
     C_B_POS,
@@ -39,7 +40,7 @@ private:
     static EXPRESSION_TYPE element_name_to_expression_type(const std::string &name);
 
 public:
-    Expression_Ptr make_expression(const std::string &name, std::vector<Expression_Ptr> &&children);
+    std::unique_ptr<Expression> make_expression(const std::string &name, std::vector<std::unique_ptr<Expression>> &&children);
 };
 
 }

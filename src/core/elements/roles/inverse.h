@@ -1,56 +1,60 @@
 #ifndef DLPLAN_SRC_CORE_ELEMENTS_ROLES_INVERSE_H_
 #define DLPLAN_SRC_CORE_ELEMENTS_ROLES_INVERSE_H_
 
-#include "../role.h"
+#include "../utils.h"
+
+#include "../../../../include/dlplan/core.h"
+
+#include <sstream>
+
+using namespace std::string_literals;
 
 
-namespace dlplan::core::element {
+namespace dlplan::core {
 
 class InverseRole : public Role {
 private:
     void compute_result(const RoleDenotation& denot, RoleDenotation& result) const {
-        for (const auto& pair : denot) {
+        for (const auto& pair : denot.to_vector()) {
             result.insert(std::make_pair(pair.second, pair.first));
         }
     }
 
-    std::unique_ptr<RoleDenotation> evaluate_impl(const State& state, DenotationsCaches& caches) const override {
-        auto denotation = std::make_unique<RoleDenotation>(
-            RoleDenotation(state.get_instance_info_ref().get_num_objects()));
+    RoleDenotation evaluate_impl(const State& state, DenotationsCaches& caches) const override {
+        RoleDenotation denotation(state.get_instance_info()->get_objects().size());
         compute_result(
             *m_role->evaluate(state, caches),
-            *denotation);
+            denotation);
         return denotation;
     }
 
-    std::unique_ptr<RoleDenotations> evaluate_impl(const States& states, DenotationsCaches& caches) const override {
-        auto denotations = std::make_unique<RoleDenotations>();
-        denotations->reserve(states.size());
+    RoleDenotations evaluate_impl(const States& states, DenotationsCaches& caches) const override {
+        RoleDenotations denotations;
+        denotations.reserve(states.size());
         auto role_denotations = m_role->evaluate(states, caches);
         for (size_t i = 0; i < states.size(); ++i) {
-            auto denotation = std::make_unique<RoleDenotation>(
-                RoleDenotation(states[i].get_instance_info_ref().get_num_objects()));
+            RoleDenotation denotation(states[i].get_instance_info()->get_objects().size());
             compute_result(
                 *(*role_denotations)[i],
-                *denotation);
-            denotations->push_back(caches.m_r_denot_cache.insert(std::move(denotation)).first->get());
+                denotation);
+            denotations.push_back(caches.get_role_denotation_cache().insert_denotation(std::move(denotation)));
         }
        return denotations;
     }
 
 protected:
-    const Role_Ptr m_role;
+    const std::shared_ptr<const Role> m_role;
 
 public:
-    InverseRole(const VocabularyInfo& vocabulary, Role_Ptr role)
-    : Role(vocabulary, role->get_is_static()), m_role(role) {
+    InverseRole(std::shared_ptr<const VocabularyInfo> vocabulary_info, std::shared_ptr<const Role> role)
+    : Role(vocabulary_info, role->is_static()), m_role(role) {
         if (!role) {
             throw std::runtime_error("InverseRole::InverseRole - child is a nullptr.");
         }
     }
 
     RoleDenotation evaluate(const State& state) const override {
-        RoleDenotation denotation(state.get_instance_info_ref().get_num_objects());
+        RoleDenotation denotation(state.get_instance_info()->get_objects().size());
         compute_result(
             m_role->evaluate(state),
             denotation);
@@ -65,6 +69,10 @@ public:
         out << get_name() << "(";
         m_role->compute_repr(out);
         out << ")";
+    }
+
+    int compute_evaluate_time_score() const override {
+        return m_role->compute_evaluate_time_score() + SCORE_QUADRATIC;
     }
 
     static std::string get_name() {

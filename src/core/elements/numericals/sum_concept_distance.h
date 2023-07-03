@@ -1,20 +1,23 @@
 #ifndef DLPLAN_SRC_CORE_ELEMENTS_NUMERICAL_SUM_CONCEPT_DISTANCE_H_
 #define DLPLAN_SRC_CORE_ELEMENTS_NUMERICAL_SUM_CONCEPT_DISTANCE_H_
 
-#include "../numerical.h"
-#include "../concept.h"
-#include "../role.h"
 #include "../utils.h"
 
+#include "../../../../include/dlplan/core.h"
 
-namespace dlplan::core::element {
+#include <sstream>
+
+using namespace std::string_literals;
+
+
+namespace dlplan::core {
 
 class SumConceptDistanceNumerical : public Numerical {
 private:
     void compute_result(const ConceptDenotation& concept_from_denot, const RoleDenotation& role_denot, const ConceptDenotation& concept_to_denot, int& result) const {
         result = 0;
         utils::Distances source_distances = utils::compute_multi_source_multi_target_shortest_distances(concept_from_denot, role_denot, concept_to_denot);
-        for (const auto target : concept_to_denot) {
+        for (const auto target : concept_to_denot.to_vector()) {
             result = utils::path_addition(result, source_distances[target]);
         }
     }
@@ -40,19 +43,19 @@ private:
         return denotation;
     }
 
-    std::unique_ptr<NumericalDenotations> evaluate_impl(const States& states, DenotationsCaches& caches) const override {
-        auto denotations = std::make_unique<NumericalDenotations>();
-        denotations->reserve(states.size());
+    NumericalDenotations evaluate_impl(const States& states, DenotationsCaches& caches) const override {
+        NumericalDenotations denotations;
+        denotations.reserve(states.size());
         auto concept_from_denots = m_concept_from->evaluate(states, caches);
         auto role_denots = m_role->evaluate(states, caches);
         auto concept_to_denots = m_concept_to->evaluate(states, caches);
         for (size_t i = 0; i < states.size(); ++i) {
             if ((*concept_from_denots)[i]->empty()) {
-                denotations->push_back(INF);
+                denotations.push_back(INF);
                 continue;
             }
             if ((*concept_to_denots)[i]->empty()) {
-                denotations->push_back(INF);
+                denotations.push_back(INF);
                 continue;
             }
             int denotation;
@@ -61,19 +64,19 @@ private:
                 *(*role_denots)[i],
                 *(*concept_to_denots)[i],
                 denotation);
-            denotations->push_back(denotation);
+            denotations.push_back(denotation);
         }
         return denotations;
     }
 
 protected:
-    const Concept_Ptr m_concept_from;
-    const Role_Ptr m_role;
-    const Concept_Ptr m_concept_to;
+    const std::shared_ptr<const Concept> m_concept_from;
+    const std::shared_ptr<const Role> m_role;
+    const std::shared_ptr<const Concept> m_concept_to;
 
 public:
-    SumConceptDistanceNumerical(const VocabularyInfo& vocabulary, Concept_Ptr concept_from, Role_Ptr role, Concept_Ptr concept_to)
-    : Numerical(vocabulary, concept_from->get_is_static() && role->get_is_static() && concept_to->get_is_static()),
+    SumConceptDistanceNumerical(std::shared_ptr<const VocabularyInfo> vocabulary_info, std::shared_ptr<const Concept> concept_from, std::shared_ptr<const Role> role, std::shared_ptr<const Concept> concept_to)
+    : Numerical(vocabulary_info, concept_from->is_static() && role->is_static() && concept_to->is_static()),
       m_concept_from(concept_from), m_role(role), m_concept_to(concept_to) {
         if (!(concept_from && role && concept_to)) {
             throw std::runtime_error("SumConceptDistanceNumerical::SumConceptDistanceNumerical - child is not of type Concept, Role, Concept.");
@@ -107,6 +110,10 @@ public:
         out << ",";
         m_concept_to->compute_repr(out);
         out << ")";
+    }
+
+    int compute_evaluate_time_score() const override {
+        return m_concept_from->compute_evaluate_time_score() + m_role->compute_evaluate_time_score() + m_concept_to->compute_evaluate_time_score() + SCORE_QUBIC;
     }
 
     static std::string get_name() {

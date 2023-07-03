@@ -15,6 +15,11 @@ protected:
 
 protected:
     BooleanCondition(std::shared_ptr<const core::Boolean> boolean);
+
+    int compute_evaluate_time_score() const override;
+
+    std::shared_ptr<const core::Boolean> get_boolean() const override;
+    std::shared_ptr<const core::Numerical> get_numerical() const override;
 };
 
 
@@ -24,6 +29,11 @@ protected:
 
 protected:
     NumericalCondition(std::shared_ptr<const core::Numerical> numerical);
+
+    int compute_evaluate_time_score() const override;
+
+    std::shared_ptr<const core::Boolean> get_boolean() const override;
+    std::shared_ptr<const core::Numerical> get_numerical() const override;
 };
 
 
@@ -35,8 +45,7 @@ public:
     bool evaluate(const core::State& source_state, core::DenotationsCaches& caches) const override;
 
     std::string compute_repr() const override;
-
-    std::shared_ptr<const BaseCondition> copy_to_builder(PolicyBuilder& policy_builder) const override;
+    std::string str() const override;
 };
 
 class NegativeBooleanCondition : public BooleanCondition {
@@ -47,8 +56,7 @@ public:
     bool evaluate(const core::State& source_state, core::DenotationsCaches& caches) const override;
 
     std::string compute_repr() const override;
-
-    std::shared_ptr<const BaseCondition> copy_to_builder(PolicyBuilder& policy_builder) const override;
+    std::string str() const override;
 };
 
 class EqualNumericalCondition : public NumericalCondition {
@@ -59,8 +67,7 @@ public:
     bool evaluate(const core::State& source_state, core::DenotationsCaches& caches) const override;
 
     std::string compute_repr() const override;
-
-    std::shared_ptr<const BaseCondition> copy_to_builder(PolicyBuilder& policy_builder) const override;
+    std::string str() const override;
 };
 
 class GreaterNumericalCondition : public NumericalCondition {
@@ -71,8 +78,7 @@ public:
     bool evaluate(const core::State& source_state, core::DenotationsCaches& caches) const override;
 
     std::string compute_repr() const override;
-
-    std::shared_ptr<const BaseCondition> copy_to_builder(PolicyBuilder& policy_builder) const override;
+    std::string str() const override;
 };
 
 }

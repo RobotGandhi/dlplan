@@ -1,57 +1,60 @@
 #ifndef DLPLAN_SRC_CORE_ELEMENTS_ROLES_IDENTITY_H_
 #define DLPLAN_SRC_CORE_ELEMENTS_ROLES_IDENTITY_H_
 
-#include "../role.h"
-#include "../concept.h"
+#include "../utils.h"
+
+#include "../../../../include/dlplan/core.h"
+
+#include <sstream>
+
+using namespace std::string_literals;
 
 
-namespace dlplan::core::element {
+namespace dlplan::core {
 
 class IdentityRole : public Role {
 private:
     void compute_result(const ConceptDenotation& denot, RoleDenotation& result) const {
-        for (const auto& single : denot) {
+        for (const auto& single : denot.to_vector()) {
             result.insert(std::make_pair(single, single));
         }
     }
 
-    std::unique_ptr<RoleDenotation> evaluate_impl(const State& state, DenotationsCaches& caches) const override {
-        auto denotation = std::make_unique<RoleDenotation>(
-            RoleDenotation(state.get_instance_info_ref().get_num_objects()));
+    RoleDenotation evaluate_impl(const State& state, DenotationsCaches& caches) const override {
+        RoleDenotation denotation(state.get_instance_info()->get_objects().size());
         compute_result(
             *m_concept->evaluate(state, caches),
-            *denotation);
+            denotation);
         return denotation;
     }
 
-    std::unique_ptr<RoleDenotations> evaluate_impl(const States& states, DenotationsCaches& caches) const override {
-        auto denotations = std::make_unique<RoleDenotations>();
-        denotations->reserve(states.size());
+    RoleDenotations evaluate_impl(const States& states, DenotationsCaches& caches) const override {
+        RoleDenotations denotations;
+        denotations.reserve(states.size());
         auto concept_denotations = m_concept->evaluate(states, caches);
         for (size_t i = 0; i < states.size(); ++i) {
-            auto denotation = std::make_unique<RoleDenotation>(
-                RoleDenotation(states[i].get_instance_info_ref().get_num_objects()));
+            RoleDenotation denotation(states[i].get_instance_info()->get_objects().size());
             compute_result(
                 *(*concept_denotations)[i],
-                *denotation);
-            denotations->push_back(caches.m_r_denot_cache.insert(std::move(denotation)).first->get());
+                denotation);
+            denotations.push_back(caches.get_role_denotation_cache().insert_denotation(std::move(denotation)));
         }
        return denotations;
     }
 
 protected:
-    const Concept_Ptr m_concept;
+    const std::shared_ptr<const Concept> m_concept;
 
 public:
-    IdentityRole(const VocabularyInfo& vocabulary, Concept_Ptr concept)
-    : Role(vocabulary, concept->get_is_static()), m_concept(concept) {
+    IdentityRole(std::shared_ptr<const VocabularyInfo> vocabulary_info, std::shared_ptr<const Concept> concept)
+    : Role(vocabulary_info, concept->is_static()), m_concept(concept) {
         if (!concept) {
             throw std::runtime_error("IdentityRole::IdentityRole - child is a nullptr.");
         }
     }
 
     RoleDenotation evaluate(const State& state) const override {
-        RoleDenotation denotation(state.get_instance_info_ref().get_num_objects());
+        RoleDenotation denotation(state.get_instance_info()->get_objects().size());
         compute_result(
             m_concept->evaluate(state),
             denotation);
@@ -66,6 +69,10 @@ public:
         out << get_name() << "(";
         m_concept->compute_repr(out);
         out << ")";
+    }
+
+    int compute_evaluate_time_score() const override {
+        return m_concept->compute_evaluate_time_score() + SCORE_LINEAR;
     }
 
     static std::string get_name() {

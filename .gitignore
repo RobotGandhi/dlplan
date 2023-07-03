@@ -51,3 +51,20 @@ build
 libdlp.so.1
 
 **/.vscode
+
+__pycache__
+
+.venv
+
+# state-space-generators outputs
+atoms.txt
+static-atoms.txt
+goal-atoms.txt
+states.txt
+predicates.txt
+static-predicates.txt
+constants.txt
+transitions.txt
+output.sas
+run.log
+*.dot

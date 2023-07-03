@@ -31,12 +31,12 @@ int main(int argc, char** argv) {
     int num_iterations = std::atoi(argv[11]);
     std::cout << "Number of iterations: " << num_iterations << std::endl;
 
-    state_space::StateSpaceGenerator().generate_state_space(domain_filename, instance_filename);
-    auto state_space = state_space::StateSpaceReader().read(nullptr, 0);
+    auto result =  state_space::generate_state_space(domain_filename, instance_filename, nullptr, 0);
+    auto state_space = result.state_space;
     std::cout << "Started generating features" << std::endl;
-    std::cout << "Number of states: " << state_space.get_num_states() << std::endl;
-    std::cout << "Number of dynamic atoms: " << state_space.get_instance_info_ref().get_atoms_ref().size() << std::endl;
-    std::cout << "Number of static atoms: " << state_space.get_instance_info_ref().get_static_atoms_ref().size() << std::endl;
+    std::cout << "Number of states: " << state_space.get_states().size() << std::endl;
+    std::cout << "Number of dynamic atoms: " << state_space.get_instance_info()->get_atoms().size() << std::endl;
+    std::cout << "Number of static atoms: " << state_space.get_instance_info()->get_static_atoms().size() << std::endl;
 
     auto syntactic_element_factory = core::SyntacticElementFactory(state_space.get_instance_info()->get_vocabulary_info());
     auto feature_generator = generator::FeatureGenerator();
@@ -52,20 +52,21 @@ int main(int argc, char** argv) {
     feature_generator.set_generate_or_role(false);
     // feature_generator.set_generate_top_role(false);
     feature_generator.set_generate_transitive_reflexive_closure_role(false);
+    core::States states;
+    std::for_each(state_space.get_states().begin(), state_space.get_states().end(), [&](const auto& pair){ states.push_back(pair.second); });
     auto feature_reprs = feature_generator.generate(
         syntactic_element_factory,
+        states,
         concept_complexity_limit,
         role_complexity_limit,
         boolean_complexity_limit,
         count_numerical_complexity_limit,
         distance_numerical_complexity_limit,
         time_limit,
-        feature_limit,
-        threads_limit,
-        core::States(state_space.get_states_ref().begin(), state_space.get_states_ref().end()));
+        feature_limit);
 
-    std::vector<core::Boolean> boolean_features;
-    std::vector<core::Numerical> numerical_features;
+    std::vector<std::shared_ptr<const core::Boolean>> boolean_features;
+    std::vector<std::shared_ptr<const core::Numerical>> numerical_features;
     for (const auto& repr : feature_reprs) {
         if (repr.substr(0, 2) == "b_") {
             boolean_features.push_back(syntactic_element_factory.parse_boolean(repr));
@@ -81,12 +82,12 @@ int main(int argc, char** argv) {
     {
         auto start = std::chrono::steady_clock::now();
         for (int i = 0; i < num_iterations; ++i) {
-            for (const auto& state : state_space.get_states_ref()) {
+            for (const auto& pair : state_space.get_states()) {
                 for (const auto& boolean : boolean_features) {
-                    boolean.evaluate(state);
+                    boolean->evaluate(pair.second);
                 }
                 for (const auto& numerical : numerical_features) {
-                    numerical.evaluate(state);
+                    numerical->evaluate(pair.second);
                 }
             }
         }
@@ -100,12 +101,12 @@ int main(int argc, char** argv) {
         auto start = std::chrono::steady_clock::now();
         core::DenotationsCaches caches;
         for (int i = 0; i < std::atoi(argv[10]); ++i) {
-            for (const auto& state : state_space.get_states_ref()) {
+            for (const auto& pair : state_space.get_states()) {
                 for (const auto& boolean : boolean_features) {
-                    boolean.evaluate(state, caches);
+                    boolean->evaluate(pair.second, caches);
                 }
                 for (const auto& numerical : numerical_features) {
-                    numerical.evaluate(state, caches);
+                    numerical->evaluate(pair.second, caches);
                 }
             }
         }
@@ -118,13 +119,12 @@ int main(int argc, char** argv) {
     {
         auto start = std::chrono::steady_clock::now();
         core::DenotationsCaches caches;
-        core::States states_vec(state_space.get_states_ref().begin(), state_space.get_states_ref().end());
         for (int i = 0; i < std::atoi(argv[10]); ++i) {
             for (const auto& boolean : boolean_features) {
-                boolean.evaluate(states_vec, caches);
+                boolean->evaluate(states, caches);
             }
             for (const auto& numerical : numerical_features) {
-                numerical.evaluate(states_vec, caches);
+                numerical->evaluate(states, caches);
             }
         }
         auto end = std::chrono::steady_clock::now();

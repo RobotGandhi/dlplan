@@ -1,13 +1,17 @@
 #ifndef DLPLAN_SRC_CORE_ELEMENTS_BOOLEAN_INCLUSION_H_
 #define DLPLAN_SRC_CORE_ELEMENTS_BOOLEAN_INCLUSION_H_
 
-#include "../boolean.h"
-#include "../concept.h"
-#include "../role.h"
-#include "../types.h"
+#include "../utils.h"
+
+#include "../../../../include/dlplan/core.h"
+
+#include <sstream>
+#include <type_traits>
+
+using namespace std::string_literals;
 
 
-namespace dlplan::core::element {
+namespace dlplan::core {
 
 template<typename T>
 class InclusionBoolean : public Boolean {
@@ -27,9 +31,9 @@ private:
         return denotation;
     }
 
-    std::unique_ptr<BooleanDenotations>
+    BooleanDenotations
     evaluate_impl(const States& states, DenotationsCaches& caches) const override {
-        auto denotations = std::make_unique<BooleanDenotations>();
+        BooleanDenotations denotations;
         auto element_left_denotations = m_element_left->evaluate(states, caches);
         auto element_right_denotations = m_element_left->evaluate(states, caches);
         for (size_t i = 0; i < states.size(); ++i) {
@@ -38,7 +42,7 @@ private:
                 *(*element_left_denotations)[i],
                 *(*element_right_denotations)[i],
                 denotation);
-            denotations->push_back(denotation);
+            denotations.push_back(denotation);
         }
         return denotations;
     }
@@ -48,8 +52,8 @@ protected:
     const std::shared_ptr<const T> m_element_right;
 
 public:
-    InclusionBoolean(const VocabularyInfo& vocabulary, std::shared_ptr<const T> element_left, std::shared_ptr<const T> element_right)
-    : Boolean(vocabulary, element_left->get_is_static() && element_right->get_is_static()),
+    InclusionBoolean(std::shared_ptr<const VocabularyInfo> vocabulary_info, std::shared_ptr<const T> element_left, std::shared_ptr<const T> element_right)
+    : Boolean(vocabulary_info, element_left->is_static() && element_right->is_static()),
       m_element_left(element_left),
       m_element_right(element_right) {
     }
@@ -73,6 +77,18 @@ public:
        out << ",";
        m_element_right->compute_repr(out) ;
        out << ")";
+    }
+
+    int compute_evaluate_time_score() const override {
+        int score = m_element_left->compute_evaluate_time_score() + m_element_right->compute_evaluate_time_score();
+        if (std::is_same<T, Concept>::value) {
+            score += SCORE_LINEAR;
+        } else if (std::is_same<T, Role>::value) {
+            score += SCORE_QUADRATIC;
+        } else {
+            throw std::runtime_error("Inclusion::compute_evaluate_time_score - unknown template parameter.");
+        }
+        return score;
     }
 
     static std::string get_name() {

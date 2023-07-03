@@ -2,6 +2,7 @@
 #define DLPLAN_SRC_POLICY_READER_H_
 
 #include <string>
+#include <memory>
 
 
 namespace dlplan {
@@ -17,12 +18,12 @@ class BaseCondition;
 class BaseEffect;
 class Rule;
 class Policy;
-
+class PolicyBuilder;
 
 
 class PolicyReaderImpl {
 public:
-    Policy read(const std::string& data, core::SyntacticElementFactory& factory) const;
+    std::shared_ptr<const Policy> read(const std::string& data, PolicyBuilder& builder, core::SyntacticElementFactory& factory) const;
 };
 
 }
