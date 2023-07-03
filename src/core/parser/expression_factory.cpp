@@ -16,6 +16,7 @@
 #include "expressions/concepts/some.h"
 #include "expressions/concepts/subset.h"
 #include "expressions/concepts/top.h"
+#include "expressions/concepts/thesis.h"
 #include "expressions/numericals/concept_distance.h"
 #include "expressions/numericals/count.h"
 #include "expressions/numericals/role_distance.h"
@@ -50,6 +51,7 @@
 #include "../elements/concepts/some.h"
 #include "../elements/concepts/subset.h"
 #include "../elements/concepts/top.h"
+#include "../elements/concepts/thesis.h"
 #include "../elements/numericals/concept_distance.h"
 #include "../elements/numericals/count.h"
 #include "../elements/numericals/role_distance.h"
@@ -108,6 +110,8 @@ Expression_Ptr ExpressionFactory::make_expression(const VocabularyInfo& vocabula
         return std::make_unique<SubsetConcept>(SubsetConcept(name, std::move(children)));
     } else if (name == element::TopConcept::get_name()) {
         return std::make_unique<TopConcept>(TopConcept(name, std::move(children)));
+    } else if (name == element::ThesisConcept::get_name()) {
+        return std::make_unique<ThesisConcept>(ThesisConcept(name, std::move(children)));
     } else if (name == element::ConceptDistanceNumerical::get_name()) {
         return std::make_unique<ConceptDistanceNumerical>(ConceptDistanceNumerical(name, std::move(children)));
     } else if (name == element::CountNumerical<int>::get_name()) {
@@ -156,7 +160,7 @@ Expression_Ptr ExpressionFactory::make_expression(const VocabularyInfo& vocabula
         return std::make_unique<Expression>(Expression(name, std::move(children)));
     }
     // case 4: wrong syntax
-    throw std::runtime_error("ExpressionFactory::make_expression - No implementation available for ("s + name + ").");
+    throw std::runtime_error("Test 2: ExpressionFactory::make_expression - No implementation available for ("s + name + ").");
 }
 
 
