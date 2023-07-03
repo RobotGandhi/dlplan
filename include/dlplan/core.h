@@ -275,7 +275,7 @@ private:
         /// @param denotation
         /// @return
         const T* insert_denotation(T&& denotation) {
-            return m_uniqueness.insert(std::make_unique<T>(std::move(denotation))).first->get();
+            return m_uniqueness.insert(std::unique_ptr<T>(new T(std::move(denotation)))).first->get();
         }
 
         /// @brief Inserts raw pointer of denotation into mapping from element, instance, and state.

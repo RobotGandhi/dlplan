@@ -8,20 +8,21 @@ namespace dlplan::core::parser {
 
 class ThesisConcept : public Concept {
 protected:
-    std::unique_ptr<element::Concept> parse_concept_impl(const VocabularyInfo& vocabulary_info, Caches& cache) const override {
-        if (m_children.size() != 4) {
-            throw std::runtime_error("ThesisConcept::parse_concept_impl - number of children ("s + std::to_string(m_children.size()) + " != 4).");
+    std::unique_ptr<dlplan::core::Concept> parse_concept_impl(std::shared_ptr<const VocabularyInfo> vocabulary_info, Caches& cache) const override {
+        if (m_children.size() != 5) {
+            throw std::runtime_error("ThesisConcept::parse_concept_impl - number of children ("s + std::to_string(m_children.size()) + " != 5).");
         }
         // 1. Parse children
-        element::Concept_Ptr l = m_children[0]->parse_concept(vocabulary_info, cache);
-        element::Role_Ptr m = m_children[1]->parse_role(vocabulary_info, cache);
-        element::Concept_Ptr r = m_children[2]->parse_concept(vocabulary_info, cache);
-        element::Concept_Ptr p = m_children[3]->parse_concept(vocabulary_info, cache);
-        if (!l || !m || !r || !p) {
+        auto l = m_children[0]->parse_concept(vocabulary_info, cache);
+        auto m = m_children[1]->parse_role(vocabulary_info, cache);
+        auto r = m_children[2]->parse_concept(vocabulary_info, cache);
+        auto p = m_children[3]->parse_concept(vocabulary_info, cache);
+        auto robot = m_children[4]->parse_concept(vocabulary_info, cache);
+        if (!l || !m || !r || !p || !robot) {
             throw std::runtime_error("ThesisConcept::parse_concept_impl - children are not of type Concept, Role, Concept, Concept.");
         }
         // 2. Construct element
-        return std::make_unique<element::ThesisConcept>(vocabulary_info, l, m, r, p);
+        return std::make_unique<dlplan::core::ThesisConcept>(vocabulary_info, l, m, r, p, robot);
     }
 
 public:
