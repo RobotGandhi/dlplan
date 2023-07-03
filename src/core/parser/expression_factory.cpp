@@ -143,7 +143,9 @@ std::unique_ptr<Expression> ExpressionFactory::make_expression(const std::string
         return std::make_unique<TransitiveClosureRole>(name, std::move(children));
     } else if (name == dlplan::core::TransitiveReflexiveClosureRole::get_name()) {
         return std::make_unique<TransitiveReflexiveClosureRole>(name, std::move(children));
-    }
+    } else if (name == dlplan::core::ThesisConcept::get_name()) {
+        return std::make_unique<ThesisConcept>(name, std::move(children));
+    } 
     return std::make_unique<Expression>(name, std::move(children));
 }
 

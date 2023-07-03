@@ -42,7 +42,7 @@ private:
 
             for (auto potential_cell_id : concept_painted_denot.to_vector()) {
                 if (source_distances[potential_cell_id] == 1){
-                    denotation.insert(potential_cell_id);
+                    potential_cell_denot.insert(potential_cell_id);
                     break;
                 }
             }
