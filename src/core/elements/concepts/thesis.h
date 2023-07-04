@@ -13,8 +13,8 @@ namespace dlplan::core {
 
 class ThesisConcept : public Concept {
 private:
-    void compute_result(const ConceptDenotation& concept_from_denot, const RoleDenotation& connection_denot, const ConceptDenotation& concept_to_denot, const ConceptDenotation& concept_painted_denot, const ConceptDenotation& concept_robot_denot, ConceptDenotation& denotation, int& num_objects) const {
-        int best_cell = -1;
+    void compute_result(const ConceptDenotation& concept_from_denot, const RoleDenotation& connection_denot, const ConceptDenotation& concept_to_denot, const ConceptDenotation& concept_painted_denot, const ConceptDenotation& concept_robot_denot, ConceptDenotation& denotation, int& num_objects) const { 
+        ConceptDenotation best_cell_denot(num_objects);
         int best_distance = -1;
 
         for (auto potential_cell_id : concept_from_denot.to_vector()) {
@@ -28,29 +28,35 @@ private:
                 result = utils::path_addition(result, source_distances[target]);
             }
 
-            if (result < INF && result >= best_distance) {
-                best_distance = result;
-                best_cell = potential_cell_id;
+            if (result < INF) {
+                if (result > best_distance) {
+                    best_distance = result;
+                    best_cell_denot = ConceptDenotation(num_objects);
+                    best_cell_denot.insert(potential_cell_id);
+                }
+                else if (result == best_distance) {
+                    best_cell_denot.insert(potential_cell_id);
+                }
             }
         }
 
-        if(best_cell != -1) {
+        if(!best_cell_denot.empty()) {
+            std::cout << "Painted Denot: " << concept_painted_denot.str() << std::endl;
             ConceptDenotation potential_cell_denot(num_objects);
-            ConceptDenotation best_cell_denot(num_objects);
-            best_cell_denot.insert(best_cell);
             utils::Distances source_distances = utils::compute_multi_source_multi_target_shortest_distances(best_cell_denot, connection_denot, concept_painted_denot);
 
             for (auto potential_cell_id : concept_painted_denot.to_vector()) {
+                std::cout << "id: " << potential_cell_id << " source distance: " << source_distances[potential_cell_id] << std::endl;
                 if (source_distances[potential_cell_id] == 1){
                     potential_cell_denot.insert(potential_cell_id);
-                    break;
                 }
             }
             utils::Distances potential_distances = utils::compute_multi_source_multi_target_shortest_distances(concept_robot_denot, connection_denot, potential_cell_denot);
             int best_adjacent_cell = -1;
-            int best_distance = INF;
+            best_distance = INF;
             for (auto potential_cell_id : potential_cell_denot.to_vector()) {
-                int result = source_distances[potential_cell_id];
+                int result = potential_distances[potential_cell_id];
+                std::cout << "id: " << potential_cell_id << " result: " << result << std::endl;
                 if (result < best_distance) {
                     best_distance = result;
                     best_adjacent_cell = potential_cell_id;
@@ -143,6 +149,8 @@ public:
         m_to_concept->compute_repr(out);
         out << ",";
         m_painted_concept->compute_repr(out);
+        out << ",";
+        m_robot_concept->compute_repr(out);
         out << ")";
     }
 
